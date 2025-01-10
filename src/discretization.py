@@ -35,6 +35,7 @@ class dis:
         self.dVElmIdx = dVElmIdx 
         self.dVElmIdx_part = dVElmIdx_part
         self.dVElmIdx_part_pad = dVElmIdx_part_pad
+        
         # -----------------------------------------------------------------------------------
         # INITIALIZE ELEMENT MATRICES
         # ----------------------------------------------------------------------------------- 

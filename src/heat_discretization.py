@@ -1,4 +1,4 @@
-from element_matrices import boundary_element_matrix, element_matrices
+from element_matrices import element_matrices
 from material_interpolation import material_interpolation_heat
 import scipy
 from scipy.sparse import linalg as sla

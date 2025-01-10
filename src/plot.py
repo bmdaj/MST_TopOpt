@@ -18,9 +18,9 @@ def plot_intensity(dis):
     """
     Plots the electric field intensity for the whole simulation domain.
     """
-    init_plot_params(28)
+    init_plot_params(22)
 
-    fig, ax = plt.subplots(figsize=(16,8))
+    fig, ax = plt.subplots(figsize=(18,8))
     
     divider = make_axes_locatable(ax)
     cax = divider.append_axes('right', size='5%', pad=0.05)
@@ -155,22 +155,22 @@ def plot_iteration(dis):
     init_plot_params(28)
     fig, ax = plt.subplots(1,2,figsize=(20,4))
 
-    extent = [-0.5*dis.nElx*dis.scaling * 1e9, 0.5*dis.nElx*dis.scaling * 1e9, -0.5*dis.nEly*dis.scaling * 1e9, 0.5*dis.nEly*dis.scaling * 1e9]
+    extent = [-0.5*dis.nElx*dis.scaling * 1e6, 0.5*dis.nElx*dis.scaling * 1e6, -0.5*dis.nEly*dis.scaling * 1e6, 0.5*dis.nEly*dis.scaling * 1e6]
 
     
     divider = make_axes_locatable(ax[1])
     cax = divider.append_axes('right', size='5%', pad=0.05)
     design_field =  np.reshape(np.real(dis.A), (dis.nodesY-1, dis.nodesX-1))
-    ax[0].imshow(design_field, aspect='auto', cmap='binary')
-    im = ax[1].imshow(np.reshape(np.real(dis.Ez*np.conj(dis.Ez)), (dis.nodesY, dis.nodesX)), aspect='auto', cmap='inferno', interpolation='bilinear', extent=extent)
+    ax[0].imshow(design_field, aspect='auto', cmap='binary', extent=extent,)
+    im = ax[1].imshow(np.reshape(np.real(dis.Ez*np.conj(dis.Ez)), (dis.nodesY, dis.nodesX)), extent=extent,aspect='auto', cmap='inferno', interpolation='bilinear')
     eps = resize_el_node(dis.edofMat, np.real(dis.A).flatten(), dis.nElx, dis.nEly)
     eps = np.reshape(eps, (dis.nodesY, dis.nodesX))
     #ax[0].imshow(np.real(eps), aspect='auto', cmap='binary')
     ax[1].contour(np.real(eps), levels=1, cmap='binary', linewidth=2, alpha=1, extent=extent, origin="upper")
     fig.colorbar(im, cax=cax, orientation='vertical')
     for axis in ax:
-            axis.set_xlabel('$x$ (nm)')
-            axis.set_ylabel('$y$ (nm)')
+            axis.set_xlabel('$x$ (\\textmu m)')
+    ax[0].set_ylabel('$y$ (\\textmu m)')
     plt.show()
 
 def plot_sens(dis, sens):

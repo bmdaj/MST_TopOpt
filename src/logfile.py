@@ -28,16 +28,10 @@ def write_general_info(f, sim):
     write_line(f)
     f.write("Permittivity: {:.6e}  \n".format(sim.eps))
     f.write("Permittivity particle: {:.6e}  \n".format(sim.eps_part))
-    #f.write("Particle width: {:.6e}  \n".format(sim.part_width))
-    #f.write("Particle height: {:.6e}  \n".format(sim.part_height))
-    #f.write("Metalens width: {:.6e}  \n".format(sim.met_width))
-    #f.write("Metalens height: {:.6e}  \n".format(sim.met_height))
-    #f.write("Wavelength: {:.6e}  \n".format(sim.wavelength))
     write_line(f)
 
 def create_logfile_optimization(sim,idx_RHS_EM = None, val_RHS_EM=None, idx_RHS_heat = None, val_RHS_heat=None):
     import numpy as np
-    #directory, today = init_dir("_opt")
     directory = sim.directory_opt
     today = sim.today
 

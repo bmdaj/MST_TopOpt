@@ -21,7 +21,7 @@ class freq_top_opt_2D:
     b) Run an inverse design problem using the Topology Optimization framework. 
     """
     def __init__(self,
-                 targetXY,
+                 center_part,
                  dVElmIdx,
                  dVElmIdx_part,
                  dVElmIdx_part_pad,
@@ -40,24 +40,27 @@ class freq_top_opt_2D:
                  eps_part):
         """
         Initialization of the main class.
-        @ target XY: Target element for the intensity FOM optimization.
-        @ dVElmIdx : Indexes for the design variables.
+        @ center_part: Geometric center of the particle
+        @ dVElmIdx : Indexes for the design variables for the metalens.
+        @ dVElmIdx_part : Indexes for the design variables for the particle.
+        @ dVElmIdx_part_pad : Indexes for a padded version of the design variables for the particle.
         @ nElX: Number of elements in the X axis.
         @ nElY: Number of elements in the Y axis.
-        @ dVini: Initial value for the design variables.
+        @ dVini: Initial value for the design variables for the metalens.
+        @ dVini_part: Initial value for the design variables for the particle.
         @ eps: Value for the material's dielectric constant.
         @ wl: Wavelength of the problem (Frequency domain solver).
         @ fR: Filtering radius.
         @ maxItr: Maximum number of iterations of the optimizer. 
         @ eta: parameter that controls threshold value.
-        @ scaling: Scale of the physical problem.
         @ beta: parameter that controls the threshold sharpness.
+        @ scaling: Scale of the physical problem: length of the side of the finite element.
         @ part_shape: parameter that controls the shape of the particle: i.e. "circle" or "square".
         @ part_size: parameter that controls the size of the particle.
         @ eps_part: parameter that controls the dielectric constant of the particle.
         """
         warnings.filterwarnings("ignore") # we eliminate all possible warnings to make the notebooks more readable.
-        self.targetXY = targetXY
+        self.center_part = center_part
         self.dVElmIdx = dVElmIdx
         self.dVElmIdx_part = dVElmIdx_part
         self.dVElmIdx_part_pad = dVElmIdx_part_pad
@@ -74,23 +77,23 @@ class freq_top_opt_2D:
         self.dVs = None
         self.eta = eta
         self.beta = beta
-        self.eta_con = 0.5
+        self.eta_con = 0.5 # threshold value fot the connectivity (heat) problem
 
         self.part_shape = part_shape
         self.part_size = part_size
         self.eps_part = eps_part
-        self.alpha = 0.0
+        self.alpha = 0.0 # parameter to introduce artificial attenuation in the material interpolation
 
 
         # -----------------------------------------------------------------------------------
         # PHYSICS OF THE PROBLEM
         # ----------------------------------------------------------------------------------- 
-        self.scaling = scaling # We give the scaling of the physical problem; i.e. 1e-9 for nm.
+        self.scaling = scaling # We give the scaling of the physical problem; i.e. 20e-9 for 20 nm.
 
         self.phys = phy(self.eps,
                         self.part_shape,
                         self.part_size,
-                        self.targetXY, 
+                        self.center_part, 
                         self.eps_part,
                         self.scaling,
                         self.wavelength,
@@ -98,12 +101,13 @@ class freq_top_opt_2D:
 
         # -----------------------------------------------------------------------------------
         # DISCRETIZATION OF THE PROBLEM
-        # -----------------------------------------------------------------------------------                 
-        tElmIdx = (self.targetXY[1]-1)*self.nElX+self.targetXY[0]-1                
+        # ----------------------------------------------------------------------------------- 
+                        
+        center_part_idx = (self.center_part[1]-1)*self.nElX+self.center_part[0]-1                
         self.dis_0 = dis(self.scaling,
                     self.nElX,
                     self.nElY,
-                    tElmIdx,
+                    center_part_idx,
                     self.dVElmIdx,
                     self.dVElmIdx_part,
                     self.dVElmIdx_part_pad)
@@ -113,16 +117,14 @@ class freq_top_opt_2D:
         self.dis_0.index_set() 
 
         # -----------------------------------------------------------------------------------
-        # DISCRETIZATION OF THE PROBLEM
+        # DISCRETIZATION OF THE HEAT PROBLEM FOR THE CONNECTIVITY CONSTRAINT
         # -----------------------------------------------------------------------------------    
 
-        self.dis_0.index_set() 
+        self.nEly_lens = len(self.dVElmIdx[0]) #  number of elements in the Y axis of the metalens region
+        self.nElx_lens = len(self.dVElmIdx[1]) #  number of elements in the X axis of the metalens region
 
-        self.nEly_lens = len(self.dVElmIdx[0])
-        self.nElx_lens = len(self.dVElmIdx[1])
-
-        self.nEly_part = len(self.dVElmIdx_part[0])
-        self.nElx_part = len(self.dVElmIdx_part[1])
+        self.nEly_part = len(self.dVElmIdx_part[0]) #  number of elements in the Y axis of the particle region
+        self.nElx_part = len(self.dVElmIdx_part[1]) #  number of elements in the X axis of the particle region
 
 
         self.dis_heat = dis_heat(self.scaling,
@@ -135,20 +137,23 @@ class freq_top_opt_2D:
                     self.nEly_part,
                     debug=False)
 
-        # We set the indexes of the discretization: i.e. system matrix, boundary conditions ...
+        # We set the indexes of the discretization for the heat problem: i.e. system matrix, boundary conditions ...
 
         self.dis_heat.index_set(obj="lens") 
         self.dis_heat_part.index_set(obj="part") 
 
         # -----------------------------------------------------------------------------------  
         # FILTERING AND THRESHOLDING 
-        # -----------------------------------------------------------------------------------   
+        # -----------------------------------------------------------------------------------  
+        #  
         self.filThr =  filter_threshold(self.fR, self.nElX, self.nElY, self.eta, self.beta) 
         self.filThr_con =  filter_threshold(self.fR, self.nElx_lens, self.nEly_lens, self.eta_con, self.beta) 
         self.filThr_con_part =  filter_threshold(self.fR, self.nElx_part, self.nEly_part, self.eta_con, self.beta)
+
         # -----------------------------------------------------------------------------------  
         # INITIALIZING DESIGN VARIABLES
         # -----------------------------------------------------------------------------------  
+        
         self.dVs = self.dVini 
         self.dVs_part = self.dVini_part 
 
@@ -283,7 +288,7 @@ class freq_top_opt_2D:
                     self.phys = phy(self.eps,
                             self.part_shape,
                             self.part_size,
-                            self.targetXY, 
+                            self.center_part, 
                             self.eps_part,
                             self.scaling,
                             self.wavelength,
