@@ -55,7 +55,7 @@ def plot_E_comp(dis, Ez):
 
     extent = [-0.5*dis.nElx*dis.scaling * 1e6, 0.5*dis.nElx*dis.scaling * 1e6, -0.5*dis.nEly*dis.scaling * 1e6, 0.5*dis.nEly*dis.scaling * 1e6]
 
-    im = ax.imshow(np.reshape(np.real(Ez), (dis.nodesY, dis.nodesX)), aspect='auto', cmap='bwr', interpolation='bilinear', extent=extent)
+    im = ax.imshow(np.reshape(np.real(Ez), (dis.nodesY, dis.nodesX)), aspect='auto', cmap='seismic', interpolation='bilinear', extent=extent)
     fig.colorbar(im, cax=cax, orientation='vertical', label="$E_z$ (V/m)")
 
 
@@ -84,12 +84,12 @@ def plot_H_comp(dis, comp):
     extent = [-0.5*dis.nElx*dis.scaling * 1e6, 0.5*dis.nElx*dis.scaling * 1e6, -0.5*dis.nEly*dis.scaling * 1e6, 0.5*dis.nEly*dis.scaling * 1e6]
 
     if comp == "x":
-        im = ax.imshow(np.real(dis.Hx), aspect='auto', cmap='bwr', interpolation='bilinear', extent=extent)
+        im = ax.imshow(np.real(dis.Hx), aspect='auto', cmap='seismic', interpolation='bilinear', extent=extent)
         fig.colorbar(im, cax=cax, orientation='vertical', label="$H_x$ (A/m)")
 
 
     if comp == "y":
-        im = ax.imshow(np.real(dis.Hy), aspect='auto', cmap='bwr', interpolation='bilinear', extent=extent)
+        im = ax.imshow(np.real(dis.Hy), aspect='auto', cmap='seismic', interpolation='bilinear', extent=extent)
         fig.colorbar(im, cax=cax, orientation='vertical', label="$H_y$ (A/m)")
 
 
