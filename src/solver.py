@@ -3,7 +3,7 @@ from heat_discretization import dis_heat
 import numpy as np 
 from physics import phy
 from filter_threshold import filter_threshold
-from plot import plot_intensity, plot_mi, plot_mi_heat, plot_sens, plot_sens_part, save_designs, plot_H_comp, plot_heat, plot_sens_heat
+from plot import *
 import warnings
 import nlopt
 import time 
@@ -171,12 +171,12 @@ class freq_top_opt_2D:
         """
         Function to solve the forward FEM problem in the frequency domain given a distribution of dielectric function in the simulation domain.
         """
-        Ez = self.dis_0.FEM_sol(dVs, dVs_part, self.phys, self.filThr)
+        self.Ez = self.dis_0.FEM_sol(dVs, dVs_part, self.phys, self.filThr)
         self.FOM =  self.dis_0.compute_FOM()
         _, self.sens, self.sens_part = self.dis_0.objective_grad(dVs, dVs_part, self.phys, self.filThr)
-        self.plot_FOM()
+        #self.plot_FOM()
 
-        return Ez, self.FOM
+        return self.Ez, self.FOM
     
     def solve_scattered_field(self, dVs, dVs_part):
         """
@@ -522,14 +522,18 @@ class freq_top_opt_2D:
         """
         Function that gives the value of the forces on the particle.
         """
-        Fx = self.dis_0.Fx
-        Fy = self.dis_0.Fy
-        print("Fx: ", Fx)
-        print("Fy: ", Fy)
+        Fx = np.real(self.dis_0.Fx)*1E6 # multiply to set correct units
+        Fy = np.real(self.dis_0.Fy)*1E6 # multiply to set correct units
+        print("Fx (pN/μm): ", Fx)
+        print("Fy (pN/μm): ", Fy)
 
     def plot_H_field(self, comp):
 
         plot_H_comp(self.dis_0, comp)
+
+    def plot_E_field(self):
+
+        plot_E_comp(self.dis_0, self.Ez)
 
     
     def plot_material_interpolation(self):

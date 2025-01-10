@@ -42,35 +42,64 @@ def plot_intensity(dis):
 
     plt.show()
 
-def plot_H_comp(dis, comp):
+def plot_E_comp(dis, Ez):
     """
     Plots the electric field intensity for the whole simulation domain.
     """
-    init_plot_params(28)
+    init_plot_params(22)
 
-    fig, ax = plt.subplots(figsize=(16,8))
+    fig, ax = plt.subplots(figsize=(6,3))
     
     divider = make_axes_locatable(ax)
     cax = divider.append_axes('right', size='5%', pad=0.05)
 
-    extent = [-0.5*dis.nElx*dis.scaling * 1e9, 0.5*dis.nElx*dis.scaling * 1e9, -0.5*dis.nEly*dis.scaling * 1e9, 0.5*dis.nEly*dis.scaling * 1e9]
+    extent = [-0.5*dis.nElx*dis.scaling * 1e6, 0.5*dis.nElx*dis.scaling * 1e6, -0.5*dis.nEly*dis.scaling * 1e6, 0.5*dis.nEly*dis.scaling * 1e6]
 
-    if comp == "x":
-        im = ax.imshow(np.real(dis.Hx), aspect='auto', cmap='inferno', interpolation='bilinear', extent=extent)
-        print(np.max(np.real(dis.Hx)))
+    im = ax.imshow(np.reshape(np.real(Ez), (dis.nodesY, dis.nodesX)), aspect='auto', cmap='bwr', interpolation='bilinear', extent=extent)
+    fig.colorbar(im, cax=cax, orientation='vertical', label="$E_z$ (V/m)")
 
-    if comp == "y":
-        im = ax.imshow(np.real(dis.Hy), aspect='auto', cmap='inferno', interpolation='bilinear', extent=extent)
-        print(np.max(np.real(dis.Hy)))
+
 
     
     eps = resize_el_node(dis.edofMat, np.real(dis.A).flatten(), dis.nElx, dis.nEly)
     eps = np.reshape(eps, (dis.nodesY, dis.nodesX))
     ax.contour(np.real(eps), levels=1, cmap='binary', linewidth=2, alpha=1, extent=extent, origin="upper")
-    fig.colorbar(im, cax=cax, orientation='vertical')
 
-    ax.set_xlabel('$x$ (nm)')
-    ax.set_ylabel('$y$ (nm)')
+    ax.set_xlabel('$x$ (\\textmu m)')
+    ax.set_ylabel('$y$ (\\textmu m)')
+
+    plt.show()
+
+def plot_H_comp(dis, comp):
+    """
+    Plots the electric field intensity for the whole simulation domain.
+    """
+    init_plot_params(22)
+
+    fig, ax = plt.subplots(figsize=(6,3))
+    
+    divider = make_axes_locatable(ax)
+    cax = divider.append_axes('right', size='5%', pad=0.05)
+
+    extent = [-0.5*dis.nElx*dis.scaling * 1e6, 0.5*dis.nElx*dis.scaling * 1e6, -0.5*dis.nEly*dis.scaling * 1e6, 0.5*dis.nEly*dis.scaling * 1e6]
+
+    if comp == "x":
+        im = ax.imshow(np.real(dis.Hx), aspect='auto', cmap='bwr', interpolation='bilinear', extent=extent)
+        fig.colorbar(im, cax=cax, orientation='vertical', label="$H_x$ (A/m)")
+
+
+    if comp == "y":
+        im = ax.imshow(np.real(dis.Hy), aspect='auto', cmap='bwr', interpolation='bilinear', extent=extent)
+        fig.colorbar(im, cax=cax, orientation='vertical', label="$H_y$ (A/m)")
+
+
+    
+    eps = resize_el_node(dis.edofMat, np.real(dis.A).flatten(), dis.nElx, dis.nEly)
+    eps = np.reshape(eps, (dis.nodesY, dis.nodesX))
+    ax.contour(np.real(eps), levels=1, cmap='binary', linewidth=2, alpha=1, extent=extent, origin="upper")
+
+    ax.set_xlabel('$x$ (\\textmu m)')
+    ax.set_ylabel('$y$ (\\textmu m)')
 
     plt.show()
 
@@ -152,8 +181,8 @@ def plot_iteration(dis):
     Plots the material interpolation and the electric field intensity for the whole simulation domain.
     Applied in each iteration of the optimization.
     """
-    init_plot_params(28)
-    fig, ax = plt.subplots(1,2,figsize=(20,4))
+    init_plot_params(22)
+    fig, ax = plt.subplots(1,2,figsize=(14,3))
 
     extent = [-0.5*dis.nElx*dis.scaling * 1e6, 0.5*dis.nElx*dis.scaling * 1e6, -0.5*dis.nEly*dis.scaling * 1e6, 0.5*dis.nEly*dis.scaling * 1e6]
 
@@ -167,7 +196,7 @@ def plot_iteration(dis):
     eps = np.reshape(eps, (dis.nodesY, dis.nodesX))
     #ax[0].imshow(np.real(eps), aspect='auto', cmap='binary')
     ax[1].contour(np.real(eps), levels=1, cmap='binary', linewidth=2, alpha=1, extent=extent, origin="upper")
-    fig.colorbar(im, cax=cax, orientation='vertical')
+    fig.colorbar(im, cax=cax, orientation='vertical', label="$|E_z|^2$(V$^2$/m$^2$)")
     for axis in ax:
             axis.set_xlabel('$x$ (\\textmu m)')
     ax[0].set_ylabel('$y$ (\\textmu m)')
