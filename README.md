@@ -1,4 +1,4 @@
-# MST_TOPOPT
+# MST_TopOpt
 
 This repository contains the code used to reproduce key results from the paper:
 
@@ -21,9 +21,9 @@ This repository includes the code to reproduce the following results from the pa
 
 The code provided can be extended to reproduce additional results presented in the paper, such as those for particle-metalens systems and other applications.
 
-## Citing MST_TOPOPT
+## Citing MST_TopOpt
 
-If you use **MST_TOPOPT** in your research, we kindly request that you cite the following paper:
+If you use **MST_topOpt** in your research, we kindly request that you cite the following paper:
 
 **B. Martinez de Aguirre Jokisch, R.E. Christiansen, O. Sigmund.**  
 *"Engineering optical forces through Maxwell stress tensor inverse design"*  
