@@ -190,7 +190,7 @@ def plot_iteration(dis):
     divider = make_axes_locatable(ax[1])
     cax = divider.append_axes('right', size='5%', pad=0.05)
     design_field =  np.reshape(np.real(dis.A), (dis.nodesY-1, dis.nodesX-1))
-    ax[0].imshow(design_field, aspect='auto', cmap='binary', extent=extent,)
+    ax[0].imshow(design_field, aspect='auto', cmap='binary', extent=extent)
     im = ax[1].imshow(np.reshape(np.real(dis.Ez*np.conj(dis.Ez)), (dis.nodesY, dis.nodesX)), extent=extent,aspect='auto', cmap='inferno', interpolation='bilinear')
     eps = resize_el_node(dis.edofMat, np.real(dis.A).flatten(), dis.nElx, dis.nEly)
     eps = np.reshape(eps, (dis.nodesY, dis.nodesX))
@@ -200,57 +200,6 @@ def plot_iteration(dis):
     for axis in ax:
             axis.set_xlabel('$x$ (\\textmu m)')
     ax[0].set_ylabel('$y$ (\\textmu m)')
-    plt.show()
-
-def plot_sens(dis, sens):
-    """
-    Plots the sensitivities for the design region.
-    """
-    init_plot_params(16)
-    fig, ax = plt.subplots(figsize=(14,12))
-    
-    divider = make_axes_locatable(ax)
-    cax = divider.append_axes('right', size='5%', pad=0.05)
-    im = ax.imshow(np.reshape(np.real(sens), (len(dis.dVElmIdx[0]), len(dis.dVElmIdx[1]))), cmap='inferno')
-    fig.colorbar(im, cax=cax, orientation='vertical')
-
-    ax.set_xlabel('$x$ (nm)')
-    ax.set_ylabel('$y$ (nm)')
-
-    plt.show()
-
-def plot_sens_heat(dis, sens):
-    """
-    Plots the sensitivities for the design region.
-    """
-    init_plot_params(16)
-    fig, ax = plt.subplots(figsize=(14,12))
-    
-    divider = make_axes_locatable(ax)
-    cax = divider.append_axes('right', size='5%', pad=0.05)
-    im = ax.imshow(np.reshape(np.real(sens), (dis.nEly, dis.nElx)), cmap='inferno')
-    fig.colorbar(im, cax=cax, orientation='vertical')
-
-    ax.set_xlabel('$x$ (nm)')
-    ax.set_ylabel('$y$ (nm)')
-
-    plt.show()
-
-def plot_sens_part(dis, sens):
-    """
-    Plots the sensitivities for the design region.
-    """
-    init_plot_params(16)
-    fig, ax = plt.subplots(figsize=(14,12))
-    
-    divider = make_axes_locatable(ax)
-    cax = divider.append_axes('right', size='5%', pad=0.05)
-    im = ax.imshow(np.reshape(np.real(sens), (len(dis.dVElmIdx_part[0]), len(dis.dVElmIdx_part[1]))), cmap='inferno')
-    fig.colorbar(im, cax=cax, orientation='vertical')
-
-    ax.set_xlabel('$x$ (nm)')
-    ax.set_ylabel('$y$ (nm)')
-
     plt.show()
 
 def save_designs(nElX, nElY, scaling, dis, it_num, directory_opt):
@@ -281,32 +230,24 @@ def save_designs(nElX, nElY, scaling, dis, it_num, directory_opt):
         os.makedirs(directory)
     fig.savefig(directory_opt + "/design_history/design_it"+str(it_num)+".png")
 
-def plot_it_history(maxItr, FOM_list, constraint_1, constraint_2, it_num, save, dir):
+def plot_it_history(FOM_list, constraint_1,it_num):
 
     iterations = np.linspace(0,it_num-1, it_num)
 
-    init_plot_params(24)
-    fig, ax = plt.subplots(1,2,figsize=(16,6))
+    init_plot_params(22)
+    fig, ax = plt.subplots(1,2,figsize=(20,3))
 
     ax[0].set_ylabel("FOM")
     ax[1].set_ylabel("Connectivity constraint")
 
-    ax[0].scatter(iterations, FOM_list [:it_num], color='blue')
+    ax[0].scatter(iterations, FOM_list[:it_num], color='blue', edgecolor='black', s=100, alpha = 0.75)
     ax[0].plot(iterations, FOM_list[:it_num], color='blue',  alpha=0.5)
 
-    ax[1].scatter(iterations, constraint_1 [:it_num], color='red')
-    ax[1].plot(iterations, constraint_1 [:it_num], color='red',  alpha=0.5, label="Metalens")
+    ax[1].scatter(iterations, constraint_1 [:it_num], color='red', edgecolor='black', s=100, alpha = 0.7)
+    ax[1].plot(iterations, constraint_1 [:it_num], color='red',  alpha=0.5)
 
-    ax[1].scatter(iterations, constraint_2 [:it_num], color='green')
-    ax[1].plot(iterations, constraint_2 [:it_num], color='green',  alpha=0.5, label="Particle")
-
-    ax[1].legend(frameon=True, fontsize=20)
-    ax[0].legend(frameon=True, fontsize=20)
         
     for axis in ax:
         axis.set_xlabel("Iteration number")
-
-    if save:
-        fig.savefig(dir+"/iteration_history.svg")
 
     plt.show()

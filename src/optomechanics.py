@@ -101,7 +101,7 @@ def calc_F(T_p, b_idx_x, b_idx_y, b_n_x, b_n_y, scaling):
 
     F = (np.sum(np.real(T_p_bx)*b_n_x) +  np.sum(np.real(T_p_by)*b_n_y))* scaling
 
-    return F
+    return np.real(F)
 
 def calc_P(T_p, b_idx_x, b_idx_y, b_n_x, b_n_y, scaling):
 

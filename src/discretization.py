@@ -458,8 +458,7 @@ class dis:
         """
         Computes the numerical value of the FOM.
         """ 
-        #self.FOM = -(self.Fy)/1.47E-19
-        self.FOM = (self.Fy)/15E-20
+        self.FOM = (self.Fy)/2.903E-6
 
         return self.FOM
 
@@ -545,5 +544,5 @@ class dis:
         print("----------------------------------------------")
         plot_iteration(self)
         
-        return FOM, sensFOM/15E-20, sensFOM_part/15E-20
+        return FOM, sensFOM/2.903E-6, sensFOM_part/2.903E-6
         

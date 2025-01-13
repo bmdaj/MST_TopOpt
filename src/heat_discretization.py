@@ -98,8 +98,8 @@ class dis_heat:
 
         if obj =="part":
             center = int(self.nodesX*self.nodesY/2)
-            #self.nBC_const_heat = np.array([center])
-            self.nBC_const_heat = np.concatenate([self.n4BC])
+            self.nBC_const_heat = np.array([center])
+            #self.nBC_const_heat = np.concatenate([self.n4BC])
 
         # For the implementation of the BC into the global system matrix we need to know which nodes each boundary line has:
 
