@@ -13,7 +13,7 @@ Precise spatial manipulation of particles via optical forces is essential in man
 In this work, we present a general **inverse design framework** based on the **Maxwell stress tensor (MST) formalism**. This framework enables the simultaneous design of all components of the system and is applicable to particles of arbitrary sizes and shapes. With small modifications to the baseline formulation, the method can engineer systems capable of attracting, repelling, accelerating, oscillating, and trapping particles.
 
 
-The methodology relies on the **finite element method (FEM)**, using bilinear quadrilateral elements, and **topology optimization**, a gradient-based approach for iteratively designing optical systems. The examples in this work are **two-dimensional**, assuming **transverse electric (TE) polarization**, with the optical system illuminated by an **incident plane wave**. Note that the base-code can be modified to assume transverse magnetic (TM) polarization or be illuminated by more complex sources.
+The methodology relies on the **finite element method (FEM)** and **topology optimization**, a gradient-based approach for iteratively designing optical systems. The examples in this work are **two-dimensional**, assuming **transverse electric (TE) polarization**, with the optical system illuminated by an **incident plane wave**. Note that the base-code can be modified to assume transverse magnetic (TM) polarization or be illuminated by more complex sources.
 
 ### Repository Content
 
