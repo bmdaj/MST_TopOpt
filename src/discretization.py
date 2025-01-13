@@ -1,13 +1,12 @@
 from element_matrices import element_matrices, boundary_element_matrix, field_gradient, field_gradient_cross
-from material_interpolation import material_interpolation_metal, material_interpolation_sc
+from material_interpolation import material_interpolation_sc
 import scipy
 from scipy.sparse import linalg as sla
 from scipy.sparse.linalg import use_solver
 import numpy as np
-from plot import plot_iteration, plot_mi
+from plot import plot_iteration
 import time
-from optomechanics import find_boundaries, find_boundaries_gray, find_boundaries_projection, calc_MST, calc_F, calc_P
-from functions import finite_diff, resize_el_node
+from optomechanics import find_boundaries_projection, calc_MST, calc_F, calc_P
 from adjoint import calc_AdjRHS
 
 class dis:

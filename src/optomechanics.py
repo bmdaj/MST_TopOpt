@@ -1,8 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from functions import resize_el_node, smooth_sign
-
-# EVENTUALLY CHANGE CODE TO HAVE AN OPTOMECHANICS CLASS
+from functions import resize_el_node
 
 def calc_MST(Ex,Ey,Ez,Hx,Hy,Hz):
 
@@ -122,143 +120,6 @@ def calc_P(T_p, b_idx_x, b_idx_y, b_n_x, b_n_y, scaling):
 
     return F
     
-def find_boundaries(A, edofMat, nElx, nEly):
-
-    """
-    Finds the indexes of the boundary elements.
-    @ A: Material interpolation
-    """
-
-    A_node = resize_el_node(edofMat, A.flatten(), nElx, nEly)
-
-    A_node = np.reshape(A_node, (nEly+1, nElx+1))
-
-    grad_A_node = np.gradient(A_node, edge_order=2)
-
-    grad_A_node_y = grad_A_node[0]
-    grad_A_node_x = grad_A_node[1]
-    
-    
-    condition_x = (A_node == 0.0) & (np.abs(grad_A_node_x) > 0.1) 
-    condition_y = (A_node == 0.0) & (np.abs(grad_A_node_y) > 0.1) 
-
-    indexes_x = np.where(condition_x)
-    indexes_y = np.where(condition_y)
-
-
-    # Combine indexes_x and indexes_y into one array
-
-    new = np.zeros_like(A_node)
-
-    #new[indexes_x] = 1.0
-    #new[indexes_y] = 1.0
-
-    normals_x = -np.sign(grad_A_node_x[indexes_x])
-    normals_y = -np.sign(grad_A_node_y[indexes_y])
-
-    #new = A_node
-
-    #new[indexes_x] = normals_x
-    #new[indexes_y] = normals_y
-
-    #plt.rcParams.update(plt.rcParamsDefault)
-    #plt.style.use("science")
-    #import matplotlib as mpl
-    #from mpl_toolkits.axes_grid1 import make_axes_locatable
-
-    #mpl.rcParams.update({"font.size": 28})
-
-
-    #fig, ax = plt.subplots(figsize=(16,8))
-    
-    #im = ax.imshow(new, aspect='auto', cmap='inferno', interpolation='none', origin='lower')
-    #ax.set_xlabel('$X$ (nm)')
-    #ax.set_ylabel('$Y$ (nm)')
-
-    #plt.show()
-
-    #raise()
-
-    return indexes_x, indexes_y, normals_x, normals_y
-
-def find_boundaries_gray(A, edofMat, nElx, nEly):
-
-    """
-    Finds the indexes of the boundary elements.
-    @ A: Material interpolation
-    """
-
-    #grad_A = np.gradient(A, edge_order=2)
-    #grad_A_y = grad_A[0]
-    #grad_A_x = grad_A[1]
-    #grad_A_node_y = np.reshape(resize_el_node(edofMat, grad_A_y.flatten(), nElx, nEly), (nEly+1, nElx+1))
-    #grad_A_node_x = np.reshape(resize_el_node(edofMat, grad_A_x.flatten(), nElx, nEly), (nEly+1, nElx+1))
-
-
-    A_node = resize_el_node(edofMat, A.flatten(), nElx, nEly)
-
-    A_node = np.reshape(A_node, (nEly+1, nElx+1))
-
-    grad_A_node = np.gradient(A_node, edge_order=2)
-    
-
-    grad_A_node_y = grad_A_node[0] * 2*(1.0-A_node) 
-    grad_A_node_x = grad_A_node[1] * 2*(1.0-A_node) 
-
-    # Compute the gradient along the y-axis (axis=0)
-    
-    eps = 1E-3
-    
-    condition_x = (np.abs(grad_A_node_x) > eps) 
-    condition_y = (np.abs(grad_A_node_y) > eps)
-
-    #condition_x = (np.abs(grad_A_node_x) == np.max(np.abs(grad_A_node_x))) 
-    #condition_y = (np.abs(grad_A_node_y) == np.max(np.abs(grad_A_node_y))) 
-
-    indexes_x = np.where(condition_x)
-    indexes_y = np.where(condition_y)
-
-
-    # Combine indexes_x and indexes_y into one array
-
-    new = np.zeros_like(grad_A_node_x)
-
-    #new[indexes_x] = 1.0
-    #new[indexes_y] = 1.0
-
-    normals_x = grad_A_node_x[condition_x]
-    normals_y = grad_A_node_y[condition_y]
-
-    new = A_node*(1.0-A_node)
-
-    #new = np.sqrt(grad_A_node_x**2+grad_A_node_y**2)  
-    #new[indexes_x] = normals_x
-    #new[indexes_y] = normals_y
-
-    print(np.max(grad_A_node_y))
-    print(np.max(grad_A_node_x))
-    print(np.max(new))
-    print(np.max(A_node))
-
-    plt.rcParams.update(plt.rcParamsDefault)
-    plt.style.use("science")
-    import matplotlib as mpl
-    from mpl_toolkits.axes_grid1 import make_axes_locatable
-
-    mpl.rcParams.update({"font.size": 28})
-
-
-    fig, ax = plt.subplots(figsize=(16,8))
-    
-    im = ax.imshow(np.real(np.gradient(A)[0]*(1-A)), aspect='auto', cmap='inferno', interpolation='none', origin='lower')
-    ax.set_xlabel('$X$ (nm)')
-    ax.set_ylabel('$Y$ (nm)')
-
-    plt.show()
-
-    raise()
-
-    return indexes_x, indexes_y, normals_x, normals_y
 
 def find_boundaries_projection(dis, A, edofMat, nElx, nEly):
 
@@ -307,24 +168,5 @@ def find_boundaries_projection(dis, A, edofMat, nElx, nEly):
     normals_y = P_y[indexes_y]
     dnormals_x = dP_x[indexes_x]
     dnormals_y = dP_y[indexes_y]
-
-    #plt.rcParams.update(plt.rcParamsDefault)
-    #plt.style.use("science")
-    #import matplotlib as mpl
-    #from mpl_toolkits.axes_grid1 import make_axes_locatable
-
-    #mpl.rcParams.update({"font.size": 28})
-
-
-    #fig, ax = plt.subplots(figsize=(16,8))
-    
-    #im = ax.imshow(np.real(P_x), aspect='auto', cmap='inferno', interpolation='none', origin='lower')
-    #ax.quiver(0.25*np.real(P_x), -0.25*np.real(P_y), scale=15)
-    #ax.set_xlabel('$X$ (nm)')
-    #ax.set_ylabel('$Y$ (nm)')
-
-    #plt.show()
-
-    #raise()
 
     return indexes_x, indexes_y, normals_x, normals_y, dnormals_x, dnormals_y

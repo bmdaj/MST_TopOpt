@@ -4,13 +4,9 @@ import scipy
 from scipy.sparse import linalg as sla
 from scipy.sparse.linalg import use_solver
 import numpy as np
-from plot import plot_iteration, plot_mi
 import time
 import matplotlib.pyplot as plt
-from numba import jit
-from scikits.umfpack import spsolve, splu
 from filter_threshold import filter_threshold
-from functions import finite_diff
 
 class dis_heat:
     "Class that describes the discretized FEM model"

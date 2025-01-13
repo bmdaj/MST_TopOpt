@@ -14,38 +14,12 @@ def init_plot_params(fontsize):
     mpl.rcParams.update({"font.size": fontsize})
 
 
-def plot_intensity(dis):
-    """
-    Plots the electric field intensity for the whole simulation domain.
-    """
-    init_plot_params(22)
-
-    fig, ax = plt.subplots(figsize=(18,8))
-    
-    divider = make_axes_locatable(ax)
-    cax = divider.append_axes('right', size='5%', pad=0.05)
-    print(np.max(np.real(dis.Ez)))
-    #im = ax.imshow(np.reshape(np.imag(dis.Ez), (dis.nodesY, dis.nodesX)), aspect='auto', cmap='inferno', interpolation='none')
-    extent = [-0.5*dis.nElx*dis.scaling * 1e6, 0.5*dis.nElx*dis.scaling * 1e6, -0.5*dis.nEly*dis.scaling * 1e6, 0.5*dis.nEly*dis.scaling * 1e6]
-    im = ax.imshow(np.reshape(np.real(dis.Ez), (dis.nodesY, dis.nodesX)), aspect='auto', extent=extent, cmap='inferno', interpolation='bilinear')
-    #im = ax.imshow(np.reshape(np.real(dis.Ez*np.conj(dis.Ez)), (dis.nodesY, dis.nodesX)), aspect='auto', extent=extent, cmap='inferno', interpolation='bilinear')
-    eps = resize_el_node(dis.edofMat, np.real(dis.A).flatten(), dis.nElx, dis.nEly)
-    eps = np.reshape(eps, (dis.nodesY, dis.nodesX))
-    ax.contour(np.real(eps), levels=1, cmap='binary', linewidth=2, alpha=1, extent=extent, origin="upper")
-    
-    fig.colorbar(im, cax=cax, orientation='vertical')
-
-    ax.set_xlabel('$x$ (\\textmu m)')
-    ax.set_ylabel('$y$ (\\textmu m)')
-
-    #print(np.max(np.real(dis.Ez*np.conj(dis.Ez))))
-
-    plt.show()
-
 def plot_E_comp(dis, Ez):
     """
-    Plots the electric field intensity for the whole simulation domain.
+    Plots the electric field component for the whole simulation domain. For TE polarization we only have the E_z component.
+    @ dis: The discretization class.
     """
+
     init_plot_params(22)
 
     fig, ax = plt.subplots(figsize=(6,3))
@@ -58,9 +32,8 @@ def plot_E_comp(dis, Ez):
     im = ax.imshow(np.reshape(np.real(Ez), (dis.nodesY, dis.nodesX)), aspect='auto', cmap='seismic', interpolation='bilinear', extent=extent)
     fig.colorbar(im, cax=cax, orientation='vertical', label="$E_z$ (V/m)")
 
+    # We also plot the contour of the permittivity
 
-
-    
     eps = resize_el_node(dis.edofMat, np.real(dis.A).flatten(), dis.nElx, dis.nEly)
     eps = np.reshape(eps, (dis.nodesY, dis.nodesX))
     ax.contour(np.real(eps), levels=1, cmap='binary', linewidth=2, alpha=1, extent=extent, origin="upper")
@@ -72,7 +45,9 @@ def plot_E_comp(dis, Ez):
 
 def plot_H_comp(dis, comp):
     """
-    Plots the electric field intensity for the whole simulation domain.
+    Plots the magnetic field field components for the whole simulation domain. For TE polarization the magnetic field is (H_x, H_y, 0).
+    @ dis: The discretization class.
+    @ comp: The spatial component of the field, In this case: "x" or "y".
     """
     init_plot_params(22)
 
@@ -93,6 +68,7 @@ def plot_H_comp(dis, comp):
         fig.colorbar(im, cax=cax, orientation='vertical', label="$H_y$ (A/m)")
 
 
+    # We also plot the contour of the permittivity
     
     eps = resize_el_node(dis.edofMat, np.real(dis.A).flatten(), dis.nElx, dis.nEly)
     eps = np.reshape(eps, (dis.nodesY, dis.nodesX))
@@ -103,83 +79,12 @@ def plot_H_comp(dis, comp):
 
     plt.show()
 
-def plot_heat(dis):
-    """
-    Plots the electric field intensity for the whole simulation domain.
-    """
-    init_plot_params(16)
-    fig, ax = plt.subplots(figsize=(14,12))
-    
-    divider = make_axes_locatable(ax)
-    cax = divider.append_axes('right', size='5%', pad=0.05)
-    print(np.max(np.real(dis.T)))
-    #im = ax.imshow(np.reshape(np.imag(dis.Ez), (dis.nodesY, dis.nodesX)), aspect='auto', cmap='inferno', interpolation='none')
-    extent = [-0.5*dis.nElx*dis.scaling * 1e9, 0.5*dis.nElx*dis.scaling * 1e9, -0.5*dis.nEly*dis.scaling * 1e9, 0.5*dis.nEly*dis.scaling * 1e9]
-    im = ax.imshow(np.reshape(np.real(dis.T), (dis.nodesY, dis.nodesX)), extent=extent, cmap='inferno', interpolation='none')
-    eps = resize_el_node(dis.edofMat, np.real(dis.dFPST).flatten(), dis.nElx, dis.nEly)
-    eps = np.reshape(eps, (dis.nodesY, dis.nodesX))
-    ax.contour(np.real(eps), levels=1, cmap='binary', linewidth=2, alpha=1, extent=extent, origin="upper")
-    
-    fig.colorbar(im, cax=cax, orientation='vertical')
-
-    ax.set_xlabel('$x$ (nm)')
-    ax.set_ylabel('$y$ (nm)')
-
-    #print(np.max(np.real(dis.Ez*np.conj(dis.Ez))))
-
-    plt.show()
-
-def plot_mi(dis):
-    """
-    Plots the material interpolation for the whole simulation domain.
-    """
-    init_plot_params(28)
-    fig, ax = plt.subplots(figsize=(16,8))
-
-    extent = [-0.5*dis.nElx*dis.scaling * 1e9, 0.5*dis.nElx*dis.scaling * 1e9, -0.5*dis.nEly*dis.scaling * 1e9, 0.5*dis.nEly*dis.scaling * 1e9]
-
-    
-    divider = make_axes_locatable(ax)
-    cax = divider.append_axes('right', size='5%', pad=0.05)
-    im = ax.imshow(np.reshape(np.real(dis.A), (dis.nodesY-1, dis.nodesX-1)), aspect='auto', cmap='inferno', extent=extent, origin="upper")
-    fig.colorbar(im, cax=cax, orientation='vertical')
-
-    ax.set_xlabel('$x$ (nm)')
-    ax.set_ylabel('$y$ (nm)')
-
-    plt.show()
-
-def plot_mi_heat(dis):
-    """
-    Plots the material interpolation for the whole simulation domain.
-    """
-    init_plot_params(28)
-    fig, ax = plt.subplots(2,1,figsize=(16,8))
-
-    extent = [-0.5*dis.nElx*dis.scaling * 1e9, 0.5*dis.nElx*dis.scaling * 1e9, -0.5*dis.nEly*dis.scaling * 1e9, 0.5*dis.nEly*dis.scaling * 1e9]
-
-    
-    divider0 = make_axes_locatable(ax[0])
-    cax0 = divider0.append_axes('right', size='5%', pad=0.05)
-    im0 = ax[0].imshow(np.reshape(np.real(dis.A_C), (dis.nodesY-1, dis.nodesX-1)), aspect='auto', cmap='inferno', extent=extent, origin="upper")
-    fig.colorbar(im0, cax=cax0, orientation='vertical')
-
-    divider1 = make_axes_locatable(ax[1])
-    cax1 = divider1.append_axes('right', size='5%', pad=0.05)
-    im1 = ax[1].imshow(np.reshape(np.real(dis.A_S), (dis.nodesY-1, dis.nodesX-1)), aspect='auto', cmap='inferno', extent=extent, origin="upper")
-    fig.colorbar(im1, cax=cax1, orientation='vertical')
-
-    for axis in ax:
-
-        axis.set_xlabel('$x$ (nm)')
-        axis.set_ylabel('$y$ (nm)')
-
-    plt.show()
 
 def plot_iteration(dis):
     """
     Plots the material interpolation and the electric field intensity for the whole simulation domain.
     Applied in each iteration of the optimization.
+    @ dis: The discretization class.
     """
     init_plot_params(22)
     fig, ax = plt.subplots(1,2,figsize=(14,3))
@@ -192,18 +97,30 @@ def plot_iteration(dis):
     design_field =  np.reshape(np.real(dis.A), (dis.nodesY-1, dis.nodesX-1))
     ax[0].imshow(design_field, aspect='auto', cmap='binary', extent=extent)
     im = ax[1].imshow(np.reshape(np.real(dis.Ez*np.conj(dis.Ez)), (dis.nodesY, dis.nodesX)), extent=extent,aspect='auto', cmap='inferno', interpolation='bilinear')
+    fig.colorbar(im, cax=cax, orientation='vertical', label="$|E_z|^2$(V$^2$/m$^2$)")
+
+    # We also plot the contour of the permittivity
+    
     eps = resize_el_node(dis.edofMat, np.real(dis.A).flatten(), dis.nElx, dis.nEly)
     eps = np.reshape(eps, (dis.nodesY, dis.nodesX))
-    #ax[0].imshow(np.real(eps), aspect='auto', cmap='binary')
     ax[1].contour(np.real(eps), levels=1, cmap='binary', linewidth=2, alpha=1, extent=extent, origin="upper")
-    fig.colorbar(im, cax=cax, orientation='vertical', label="$|E_z|^2$(V$^2$/m$^2$)")
+
     for axis in ax:
             axis.set_xlabel('$x$ (\\textmu m)')
     ax[0].set_ylabel('$y$ (\\textmu m)')
     plt.show()
 
 def save_designs(nElX, nElY, scaling, dis, it_num, directory_opt):
-
+    # This function needs to be revised and modified in this implementation.
+    """
+    Saves the plot of the design and the intensity field.
+    @ nElX: Number of elements in the X axis.
+    @ nElY: Number of elements in the Y axis.
+    @ scaling: physical scaling of the physical problem, i.e. 1 nm.
+    @ dis: The discretization class.
+    @ it_num: iteration number in the optimization.
+    @ directory_opt: directory to save optimization results.
+    """
     init_plot_params(28)
 
     fig, ax = plt.subplots(1,2,figsize=(24,8))
@@ -214,12 +131,13 @@ def save_designs(nElX, nElY, scaling, dis, it_num, directory_opt):
     im0 = ax[0].imshow(np.real(dis.dFPST+dis.dFPST_part), cmap='binary', vmax=1, vmin=0, extent=extent)
     I = np.real(dis.Ez*np.conj(dis.Ez))
     im =  ax[1].imshow(np.reshape(I, (nElY+1, nElX+1)), cmap='inferno', extent=extent, vmax=8)
+    fig.colorbar(im, cax=cax, orientation='vertical')
+
+    # We also plot the contour of the permittivity
+
     eps = resize_el_node(dis.edofMat, np.real(dis.A).flatten(), dis.nElx, dis.nEly)
     eps = np.reshape(eps, (dis.nodesY, dis.nodesX))
     ax[1].contour(np.real(eps), levels=1, cmap='binary', linewidth=2, alpha=1, extent=extent, origin="upper")
-
-    fig.colorbar(im, cax=cax, orientation='vertical')
-
 
     for axis in ax:
             axis.set_xlabel('$x$ (nm)')
@@ -230,7 +148,13 @@ def save_designs(nElX, nElY, scaling, dis, it_num, directory_opt):
         os.makedirs(directory)
     fig.savefig(directory_opt + "/design_history/design_it"+str(it_num)+".png")
 
-def plot_it_history(FOM_list, constraint_1,it_num):
+def plot_it_history(FOM_list, constraint,it_num):
+    """
+    Plot the history of the optimization problem.
+    @ FOM_list: List with the values of the FOM for the optimization iterations.
+    @ constraint: List with the values of the connectivity constraint for the optimization iterations.
+    @ it_num: iteration number in the optimization.
+    """
 
     iterations = np.linspace(0,it_num-1, it_num)
 
@@ -243,10 +167,9 @@ def plot_it_history(FOM_list, constraint_1,it_num):
     ax[0].scatter(iterations, FOM_list[:it_num], color='blue', edgecolor='black', s=100, alpha = 0.75)
     ax[0].plot(iterations, FOM_list[:it_num], color='blue',  alpha=0.5)
 
-    ax[1].scatter(iterations, constraint_1 [:it_num], color='red', edgecolor='black', s=100, alpha = 0.7)
-    ax[1].plot(iterations, constraint_1 [:it_num], color='red',  alpha=0.5)
+    ax[1].scatter(iterations, constraint [:it_num], color='red', edgecolor='black', s=100, alpha = 0.7)
+    ax[1].plot(iterations, constraint [:it_num], color='red',  alpha=0.5)
 
-        
     for axis in ax:
         axis.set_xlabel("Iteration number")
 
