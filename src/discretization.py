@@ -6,7 +6,7 @@ from scipy.sparse.linalg import use_solver
 import numpy as np
 from plot import plot_iteration
 import time
-from optomechanics import find_boundaries_projection, calc_MST, calc_F, calc_P
+from optomechanics import find_boundaries_projection, calc_MST, calc_F
 from adjoint import calc_AdjRHS
 
 class dis:
@@ -389,9 +389,6 @@ class dis:
         #self.Ez [self.nodes_b_x] = 10
         #self.Ez [self.nodes_b_y] = 10
         #self.Ez += A_node[:,np.newaxis]
-
-        self.Px = calc_P(self.MST_p_x, self.nodes_b_x, self.nodes_b_y,  self.b_n_x, self.b_n_y, self.scaling)
-        self.Py = calc_P(self.MST_p_y, self.nodes_b_x, self.nodes_b_y,  self.b_n_x, self.b_n_y, self.scaling)
 
         self.Fx = calc_F(self.MST_p_x, self.nodes_b_x, self.nodes_b_y,  self.b_n_x, self.b_n_y, self.scaling)
         self.Fy = calc_F(self.MST_p_y, self.nodes_b_x, self.nodes_b_y, self.b_n_x, self.b_n_y, self.scaling)
