@@ -96,8 +96,14 @@ def calculate_integral_1D(f, a, b):
     return integrate.quad(f, a, b)[0]
 
 
-
 def calc_d(field, ipf_dy, x):
+    """"
+    Calculates the summed derivative of a field using the interpolation function.
+    
+    @field : The function to integrate.
+    @ipf_dy: Derivated interpolation function (i.e. df/dy)
+    @x: dependent variable.
+    """
 
     total = 0.0 + 0.0j
 
@@ -165,9 +171,6 @@ def boundary_element_matrix (scaling, k, eps):
     #KSM = 1j * k* scaling * np.array([[1/3, 1/6],
     #                                  [1/6, 1/3]])
 
-    # TO BE DONE: This may be implemented numerically. Done in index_set.ipynb for reference.
-
-
     ipf = list(ip_line_1o()) # initialize the interpolation functions
 
     gamma = 1j * k * scaling *np.sqrt(eps)
@@ -222,11 +225,9 @@ def field_gradient(edofMat, field, scaling):
 
         f_y_elem = lambda x : calc_d(field_nodes, ipf_dy, x)
         f_y[n] += 0.25 * np.array([f_y_elem(node1_x), f_y_elem(node2_x), f_y_elem(node3_x), f_y_elem(node4_x)])
-        # to fix derivatives: f_y[n] = np.array([f_y_elem(node1_x), f_y_elem(node2_x), f_y_elem(node3_x), f_y_elem(node4_x)])
 
         f_x_elem = lambda y : calc_d(field_nodes, ipf_dx, y)
         f_x[n] += 0.25 * np.array([f_x_elem(node1_y), f_x_elem(node2_y), f_x_elem(node3_y), f_x_elem(node4_y)])
-        # to fix derivatives: f_x[n] = np.array([f_x_elem(node1_y), f_x_elem(node2_y), f_x_elem(node3_y), f_x_elem(node4_y)])
 
 
     return f_x, f_y

@@ -5,7 +5,7 @@ from functions import resize_el_node
 def calc_MST(Ex,Ey,Ez,Hx,Hy,Hz):
 
     """
-    Calculates the Maxwell Stress Tensor (MST) for an electromagnetic field.
+    Calculates the time-averaged Maxwell Stress Tensor (MST) for an electromagnetic field.
     @ Ex: Ex field
     @ Ey: Ey field
     @ Ez: Ez field
@@ -53,7 +53,8 @@ def calc_MST(Ex,Ey,Ez,Hx,Hy,Hz):
 def calc_dMSTdEz(alphaz, betax, betay, betaxy, betayx):
 
     """
-    Calculates derivative of the Maxwell Stress Tensor (MST) for an electromagnetic field.
+    Calculates derivative with respect to the field solution (E_z) of the time-averaged Maxwell Stress Tensor (MST) for an electromagnetic field.
+    The input parameters (e.g. alphaz, betax) are derived in the manuscript to build up the derivative tensor.
     """    
 
     eps_0 = 8.854187816292039E-12
@@ -74,8 +75,6 @@ def calc_dMSTdEz(alphaz, betax, betay, betaxy, betayx):
     Tzy = np.zeros_like(Txx)
 
     T = 0.25*np.array([[Txx,Txy,Txz],[Tyx,Tyy,Tyz],[Tzx,Tzy,Tzz]]) # 0.5*np.real() like in COMSOL for cycle-averaging
-
-    # return tensor and projections as in COMSOL
 
     T_px = 0.25*np.array([Txx, Txy, Txz])
     T_py = 0.25*np.array([Tyx, Tyy, Tyz])
@@ -100,36 +99,20 @@ def calc_F(T_p, b_idx_x, b_idx_y, b_n_x, b_n_y, scaling):
     F = (np.sum(np.real(T_p_bx)*b_n_x) +  np.sum(np.real(T_p_by)*b_n_y))* scaling
 
     return np.real(F)
-
-def calc_P(T_p, b_idx_x, b_idx_y, b_n_x, b_n_y, scaling):
-
-    """
-    Calculates the force on the particle.
-    @ T_p: Maxwell stress tensor projection onto axis
-    @ b_idx_x: Index of the boundary elements for the nx components
-    @ b_idx_y: Index of the boundary elements for the ny components
-    @ b_n_x: Normal of the boundary elements for the x components
-    @ b_n_y: Normal of the boundary elements for the y components
-    @ scaling: Scaling factor
-    """
-
-    T_p_bx = T_p[0, b_idx_x] # Projection of the X component of the stress tensor onto the boundary elements
-    T_p_by = T_p[1, b_idx_y] # Projection of the Y component of the stress tensor onto the boundary elements
-
-    F = (np.sum(np.real(T_p_bx)) +  np.sum(np.real(T_p_by)))
-
-    return F
     
 
 def find_boundaries_projection(dis, A, edofMat, nElx, nEly):
 
     """
-    Finds the indexes of the boundary elements.
-    @ A: Material interpolation
+    Finds the indexes of nodes at the boundary and the normals for each one of the nodes.
+    @ A: Material interpolation matrix.
+    @ edofmat: Matrix with the degrees-of-freedom per element in the finite-element discretization.
+    @ nElx: Number of elements in the X direction.
+    @ nEly: Number of elements in the Y direction.
     """
 
-    sigma_x = np.array([-1,1,-1,1])
-    sigma_y = np.array([1,1,-1,-1])
+    sigma_x = np.array([-1,1,-1,1]) # matrix to be used in a later operation
+    sigma_y = np.array([1,1,-1,-1]) # matrix to be used in a later operation
 
     P_x = np.zeros((nEly+1)* (nElx+1), dtype="complex128")
     P_y = np.zeros((nEly+1)* (nElx+1), dtype="complex128")
@@ -142,10 +125,12 @@ def find_boundaries_projection(dis, A, edofMat, nElx, nEly):
 
         rho_e = rho_flat[i]
 
-        P_x [nodes.astype(int)] += 0.5*(rho_e - 0.5)*sigma_x
-        P_y [nodes.astype(int)] += 0.5*(rho_e - 0.5)*sigma_y
-        dP_x [nodes.astype(int)] += 0.5*sigma_x
-        dP_y [nodes.astype(int)] += 0.5*sigma_y
+        P_x [nodes.astype(int)] += 0.5*(rho_e - 0.5)*sigma_x # this operation helps to identify which nodes are at a boundary with respect to the X axis.
+        P_y [nodes.astype(int)] += 0.5*(rho_e - 0.5)*sigma_y # this operation helps to identify which nodes are at a boundary with respect to the Y axis.
+        dP_x [nodes.astype(int)] += 0.5*sigma_x # derivative with respect to the design variables
+        dP_y [nodes.astype(int)] += 0.5*sigma_y # derivative with respect to the design variables
+
+    # If nodes are at the ends of the simulation domain , don't count them as being at the boundary of the particle
 
     P_x[dis.n2BC] = 0.0
     P_x[dis.n3BC] = 0.0
@@ -156,13 +141,19 @@ def find_boundaries_projection(dis, A, edofMat, nElx, nEly):
     dP_y[dis.n1BC] = 0.0
     dP_y[dis.n4BC] = 0.0
 
+    # We reshape the matrices
+
     P_x = np.reshape(P_x, (nEly+1, nElx+1))
     P_y = np.reshape(P_y, (nEly+1, nElx+1))
     dP_x = np.reshape(dP_x, (nEly+1, nElx+1))
     dP_y = np.reshape(dP_y, (nEly+1, nElx+1))
 
+    # We find the indexes of the nodes by identifying the nonzero matrix entries
+
     indexes_x = np.where(P_x != 0.0)
     indexes_y = np.where(P_y != 0.0)
+
+    # By using the indexes we find the normals and their derivatives for the X and Y directions
 
     normals_x = P_x[indexes_x]
     normals_y = P_y[indexes_y]

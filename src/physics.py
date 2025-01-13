@@ -20,6 +20,7 @@ class phy:
         @ eps_part: parameter that controls the dielectric constant of the particle.
         @ scale: scale of the physical problem; i.e. 1e-9 for nm.
         @ wavelength: Wavelength of the problem (Frequency domain solver).
+        @ alpha: The attenuation factor (optical losses) added to our materials.
         """
 
         self.eps = eps

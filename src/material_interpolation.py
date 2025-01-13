@@ -23,8 +23,8 @@ def material_interpolation_metal(n_metal, k_r, x, alpha_i=0.0):
     @ n_r: refractive index of the metal.
     @ k_r: extinction cross section of the metal.
     @ x: position of the design variable
+    @ alpha_i: problem dependent sacling factor for the imaginary term.
     """
-
 
     n_eff = 1.0 + x*(n_metal-1.0) # effective refractive index
     k_eff = 0 + x*(k_r-0) # effective wavevector
@@ -35,11 +35,17 @@ def material_interpolation_metal(n_metal, k_r, x, alpha_i=0.0):
 
     return A, dAdx
 
-def material_interpolation_heat(k_metal, k_clad, x):
+def material_interpolation_heat(k_mat, k_back, x):
+    """
+    Function that implements the material interpolation for the heat problem.
+    It returns the interpolated field and its derivative with respect to the position.
+    @ k_metal: conduction coefficient for the design material.
+    @ k_back: conduction coefficient for the backround medium.
+    """
 
-    k_bck = k_clad * np.ones_like(x, dtype="complex128")
+    k_bck = k_back * np.ones_like(x, dtype="complex128")
 
-    A = k_bck + x*(k_metal-k_bck) 
-    dAdx = k_metal-k_bck
+    A = k_bck + x*(k_mat-k_bck) 
+    dAdx = k_mat-k_bck
 
     return A, dAdx

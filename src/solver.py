@@ -173,53 +173,7 @@ class freq_top_opt_2D:
         _, self.sens, self.sens_part = self.dis_0.objective_grad(dVs, dVs_part, self.phys, self.filThr)
 
         return self.Ez, self.FOM
-    
-    def solve_scattered_field(self, dVs, dVs_part):
-        """
-        Function to solve the scattered field problem formulation
-        """
-        # First solve for the incident field
 
-        Ez_inc = self.dis_0.FEM_sol(dVs, np.zeros_like(dVs_part), self.phys, self.filThr)
-
-        # Then, we solve the problem with the scatterer
-
-        Ez_tot = self.dis_0.FEM_sol(dVs, dVs_part, self.phys, self.filThr)
-
-        # Finally, we solve for the scattered field by subtraction
-
-        Ez_scat = Ez_tot - Ez_inc
-
-        self.dis_0.Ez = Ez_scat
-
-        # implement calculating the rest of the fields from this solution!
-        
-        return Ez_scat
-
-
-
-    def solve_heat(self, dVs, obj):
-        """
-        Function to solve the artificial heat problem for the connectivity constraint.
-        """
-
-        if obj == "lens":
-        
-            self.lens_domain = np.reshape(dVs, (self.nEly_lens, self.nElx_lens))
-            T = self.dis_heat.FEM_sol_heat(self.lens_domain, self.filThr_con)
-            _ =  self.dis_heat.compute_FOM()
-            _, self.sens_heat = self.dis_heat.objective_grad(self.lens_domain, self.filThr_con)
-            self.plot_heat(obj)
-
-        if obj == "part":
-        
-            self.part_domain = np.reshape(dVs, (self.nEly_part, self.nElx_part))
-            T = self.dis_heat_part.FEM_sol_heat(self.part_domain, self.filThr_con_part)
-            _ =  self.dis_heat_part.compute_FOM()
-            _, self.sens_heat_part = self.dis_heat_part.objective_grad(self.part_domain, self.filThr_con_part)
-            self.plot_heat(obj)
-
-        return T
 
     
     def optimize(self, maxItr):
@@ -354,7 +308,7 @@ class freq_top_opt_2D:
 
         start = time.time() # we track the total optimization time
 
-        self.dVs_part, self.FOM_list, _, _, _ = self.opt.optimize(self.dVs_part[:,np.newaxis])
+        self.dVs_part, self.FOM_list, _, = self.opt.optimize(self.dVs_part[:,np.newaxis])
         end =  time.time()
         elapsed_time = [(end - start) // 60, end - start - (end - start) // 60 * 60]
         print("----------------------------------------------")
@@ -365,16 +319,11 @@ class freq_top_opt_2D:
             create_logfile_optimization(self)
 
         return self.dVs_part
-
-    def plot_FOM(self):
-        """
-        Plot the FOM after a given simulation.
-        """
-        plot_intensity(self.dis_0)
+    
 
     def calculate_forces(self):
         """
-        Gives the value of the forces on the particle.
+        Gives the value of the forces on the particle in pN/μm.
         """
         Fx = np.real(self.dis_0.Fx)*1E6 # multiply to set correct units
         Fy = np.real(self.dis_0.Fy)*1E6 # multiply to set correct units
@@ -390,20 +339,19 @@ class freq_top_opt_2D:
 
     def plot_E_field(self):
         """
-        Plots the magnetic field components.
-        @ comp: Component of the magnetic field, "x" or "y" for TE polatization.
+        Plots the electric field component, only "z" for TE polarization.
         """
         plot_E_comp(self.dis_0, self.Ez)
 
 
     def iteration_history(self):
         """
-        Plots the iteration history, with the FOM and the constraints.
+        Plots the iteration history, with the FOM and the connectivity constraint.
         """
 
         print("----------------------------------------------")
         print("Iteration history")
         print("----------------------------------------------")
 
-        plot_it_history(self.FOM_list, self.opt.cons_1_it, it_num)
+        plot_it_history(self.FOM_list, self.opt.cons_it, it_num)
         
