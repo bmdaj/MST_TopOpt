@@ -1,6 +1,29 @@
+# MST_TOPOPT
+
+This repository contains the code used to reproduce key results from the paper:
+
+**B. Martinez de Aguirre Jokisch, R.E. Christiansen, O. Sigmund.**  
+*"Engineering optical forces through Maxwell stress tensor inverse design"*  
+arXiv preprint [arXiv:2410.20009](https://arxiv.org/abs/2410.20009) (2024).
+
+## Overview
+
+Precise spatial manipulation of particles via optical forces is essential in many research areas, ranging from biophysics to atomic physics. Central to this effort is the challenge of designing optical systems optimized for specific applications. Traditional design methods often rely on trial-and-error approaches or simplified models, such as approximating particles as point dipoles—an assumption valid only for particles much smaller than the wavelength of the electromagnetic field.
+
+In this work, we present a general **inverse design framework** based on the **Maxwell stress tensor (MST) formalism**. This framework enables the simultaneous design of all components of the system and is applicable to particles of arbitrary sizes and shapes. With small modifications to the baseline formulation, the method can engineer systems capable of attracting, repelling, accelerating, oscillating, and trapping particles.
+
+### Repository Content
+
+This repository includes the code to reproduce the following results from the paper:
+
+1. **Force Calculations for a Particle in Free-Space:** Reproduces the results shown in Figure 3.  
+2. **Optimization for a Particle in Free-Space:** Implements the optimization process for free-space particles in Figure 4.
+
+The code provided can be extended to reproduce additional results presented in the paper, such as those for particle-metalens systems and other applications.
+
 ## Citing MST_TOPOPT
 
-If you find **MST_TOPOPT** helpful for your research, we kindly request that you cite the following paper in any published work:
+If you use **MST_TOPOPT** in your research, we kindly request that you cite the following paper:
 
 **B. Martinez de Aguirre Jokisch, R.E. Christiansen, O. Sigmund.**  
 *"Engineering optical forces through Maxwell stress tensor inverse design"*  
