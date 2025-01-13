@@ -19,7 +19,7 @@ This repository includes the code to reproduce the following results from the pa
 1. **Force Calculations for a square article in free-Space:** Reproduces the results shown in Figure 3.  
 2. **Optimization for a particle in free-Space:** Implements the optimization process for free-space particles in Figure 4.
 
-The code provided can be extended to reproduce additional results presented in the paper, such as those for particle-metalens systems and other applications.
+The code in this repository can be extended to reproduce additional results presented in the paper, such as those for particle-metalens systems and other applications.
 
 ## Citing `MST_TopOpt`
 
