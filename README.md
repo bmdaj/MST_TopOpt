@@ -26,7 +26,7 @@ The code in this repository can be extended to reproduce additional results pres
 
 ## Citing `MST_TopOpt`
 
-If you use `MST_topOpt` in your research, we kindly request that you cite the following paper:
+If you use `MST_TopOpt` in your research, we kindly request that you cite the following paper:
 
 **B. Martinez de Aguirre Jokisch, R.E. Christiansen, O. Sigmund.**  
 *"Engineering optical forces through Maxwell stress tensor inverse design"*  
