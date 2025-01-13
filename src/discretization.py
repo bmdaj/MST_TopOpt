@@ -1,4 +1,4 @@
-from element_matrices import element_matrices, boundary_element_matrix, field_gradient, field_gradient_cross
+from element_matrices import element_matrices, boundary_element_matrix, field_gradient
 from material_interpolation import material_interpolation_sc
 import scipy
 from scipy.sparse import linalg as sla
@@ -24,7 +24,9 @@ class dis:
         @ nElX: Number of elements in the X axis.
         @ nElY: Number of elements in the Y axis.
         @ tElmIdx: Target element's index for FOM calculation.
-        @ dVElmIdx: Indexes for the design variables.
+        @ dVElmIdx: Indexes for the design variables for the metalens.
+        @ dVElmIdx_part: Indexes for the design variables for the particle.
+        @ dVElmIdx_part_pad: Indexes for a padded version of the design variables for the particle.
         """
 
         self.scaling = scaling
@@ -41,7 +43,8 @@ class dis:
         LEM, MEM = element_matrices(scaling) 
         self.LEM = LEM
         self.MEM = MEM
-        use_solver(useUmfpack=True)
+
+        use_solver(useUmfpack=True) # Use Umfpack solver
 
 
     def index_set(self):
@@ -160,19 +163,19 @@ class dis:
         F[self.nRHS[0,:]] = F[self.nRHS[0,:]] +1j*waveVector # plane wave
         F[self.nRHS[1,:]] = F[self.nRHS[1,:]] +1j*waveVector # plane wave
 
-        return self.scaling*F*1E6
+        return self.scaling*F*1E6 # scaling for units 1E6 V/m
     
     def material_distribution(self, dVs, fR):
         """
         Sets the material in the simulation domain.
         In this case, we set the air region, the substrate and the deisgn region.
-        @ dVs: Values for the design variables.
+        @ dVs: Values for the design variables. Not used in free-space, but can be used for metalens systems.
         @ fR: filter radius.
         """ 
 
         dFP = np.zeros((self.nEly, self.nElx)) # we initialize the domain to air
-        dFP[int(np.floor((self.nEly-2*fR)*9/10))+fR:-fR,fR:-fR] = 0 # we add the substrate
-        dFP[np.ix_(self.dVElmIdx[0], self.dVElmIdx[1])] = 0#np.reshape(dVs, (len(self.dVElmIdx[0]), len(self.dVElmIdx[1]))) # we add the design variables in the design field 
+        dFP[int(np.floor((self.nEly-2*fR)*9/10))+fR:-fR,fR:-fR] = 0 # the design variables for the substrate are zero in free-space
+        dFP[np.ix_(self.dVElmIdx[0], self.dVElmIdx[1])] = 0 # the design variables for the metalens are zero in free-space
         return dFP
 
     def material_distribution_part(self, dVs, part_shape, part_size, part_center):
@@ -237,7 +240,6 @@ class dis:
         K = scipy.sparse.csr_matrix((self.bS,(self.ibS.astype(int), self.jbS.astype(int))), shape=(len(self.node_nrs_flat),len(self.node_nrs_flat)), dtype='complex128')
         K.sum_duplicates()
 
-
         # we sum the contribution from the boundary to global the system matrix
         S = S + K 
 
@@ -265,6 +267,8 @@ class dis:
         # FILTERING AND THRESHOLDING ON THE MATERIAL
         # ----------------------------------------------------------------------------------- 
 
+        # For the metalens
+
         self.dFP = self.material_distribution(dVs, filThr.fR)
         self.dFPS = filThr.density_filter(np.ones((self.nEly, self.nElx)), filThr.filSca, self.dFP, np.ones((self.nEly, self.nElx)))
         self.dFPST = filThr.threshold(self.dFPS)
@@ -279,46 +283,27 @@ class dis:
         # MATERIAL INTERPOLATION
         # ----------------------------------------------------------------------------------- 
 
-        self.dFPST_total = self.dFPST + self.dFPST_part
-
-        #self.A, self.dAdx = material_interpolation_sc(phy.eps, self.dFPST, phy.alpha)
-        #self.A, self.dAdx = material_interpolation_metal(np.sqrt(phy.eps), 0.0, self.dFPST)
-
-
-        #self.A_part, self.dAdx_part = material_interpolation_sc(phy.eps_part, self.dFPST_part, phy.alpha)
-        #self.A_part, self.dAdx_part = material_interpolation_metal(np.sqrt(phy.eps), 0.0, self.dFPST_part)
+        self.dFPST_total = self.dFPST + self.dFPST_part # we add the contribution of the metalens and the particle
 
         self.A, self.dAdx = material_interpolation_sc(phy.eps, self.dFPST_total, phy.alpha)
-        #self.A, self.dAdx = material_interpolation_metal(np.sqrt(phy.eps), 0.0, self.dFPST_total, phy.alpha)
-
-
-        # Add both contributions:
-
-        #self.A = self.A + self.A_part -1.0
-        
-        # TO BE CHECKED
-
-        #self.dAdx = self.dAdx #+ self.dAdx_part #-1.0
 
         # -----------------------------------------------------------------------------------
-        # FIND THE NODES (AND NORMALS) IN THE BOUNDARY OF THE PARTICLES
+        # FIND THE NODES (AND NORMALS) IN THE BOUNDARY OF THE PARTICLE
         # ----------------------------------------------------------------------------------- 
 
         dVs_part_pad = np.ones(len(self.dVElmIdx_part_pad[0])*len(self.dVElmIdx_part_pad[1]))
 
+        # Now we create the padded material distribution for the particle.
+
         boundary, _ = self.material_distribution_part(np.ones_like(dVs_part_pad), "pad", phy.part_size, phy.part_center)
 
         self.b_idx_x, self.b_idx_y, self.b_n_x, self.b_n_y, self.db_n_x, self.db_n_y = find_boundaries_projection(self, boundary, self.edofMat, self.nElx, self.nEly)
-
-        #def fd(x):
-
-        #    self.b_idx_x, self.b_idx_y, self.b_n_x, self.b_n_y, self.db_n_x, self.db_n_y = find_boundaries_projection(self, np.reshape(x, (self.nEly, self.nElx)), self.edofMat, self.nElx, self.nEly)
-
-        #    return np.real(np.sum(self.b_n_x))
-
-        #finite_diff(self.dFPST_part.flatten(), fd, 1E-5, self.db_n_x, self.nElx, self.nEly)
-
-        #self.b_idx_x, self.b_idx_y, self.b_n_x, self.b_n_y = find_boundaries(self.dFPST_part, self.edofMat, self.nElx, self.nEly)
+        
+        # Calculate the node numbers at the boundary
+        
+        self.nodes_b_x = self.node_nrs [self.b_idx_x[0],self.b_idx_x[1]]
+        self.nodes_b_y = self.node_nrs [self.b_idx_y[0],self.b_idx_y[1]]
+    
 
         # -----------------------------------------------------------------------------------
         # SYSTEM RHS
@@ -340,8 +325,6 @@ class dis:
 
         self.lu, self.Ez = self.solve_sparse_system(F)
 
-        #self.Ez = (self.Ez /np.max(self.Ez))
-
         # -----------------------------------------------------------------------------------
         # CALCULATE THE REST OF THE FIELD COMPONENTS
         # -----------------------------------------------------------------------------------
@@ -357,11 +340,6 @@ class dis:
         # Calculate the rest of the components from the gradient:
 
         self.dEzdx, self.dEzdy  = field_gradient(self.edofMat, self.Ez.flatten(), self.scaling)
-        #self.dEzdy, self.dEzdx = np.array(np.gradient(Ez, edge_order=2)) / self.scaling
-
-        #print(np.max(self.dEzdx))
-        #print(np.max(self.dEzdy))
-        #raise()
 
         # From Maxwell's equations:
 
@@ -380,15 +358,6 @@ class dis:
         self.MST, self.MST_p_x, self.MST_p_y = calc_MST(self.Ex.flatten(), self.Ey.flatten(), self.Ez.flatten(), self.Hx.flatten(), self.Hy.flatten(), self.Hz.flatten())
 
         # Calculate the force components:
-
-        self.nodes_b_x = self.node_nrs [self.b_idx_x[0],self.b_idx_x[1]]
-        self.nodes_b_y = self.node_nrs [self.b_idx_y[0],self.b_idx_y[1]]
-
-        #A_node = resize_el_node(self.edofMat, -10*self.dFP_part.flatten(), self.nElx, self.nEly)
-
-        #self.Ez [self.nodes_b_x] = 10
-        #self.Ez [self.nodes_b_y] = 10
-        #self.Ez += A_node[:,np.newaxis]
 
         self.Fx = calc_F(self.MST_p_x, self.nodes_b_x, self.nodes_b_y,  self.b_n_x, self.b_n_y, self.scaling)
         self.Fy = calc_F(self.MST_p_y, self.nodes_b_x, self.nodes_b_y, self.b_n_x, self.b_n_y, self.scaling)
@@ -411,7 +380,7 @@ class dis:
 
     def compute_sensitivities(self, M, k, dAdx, Ez, AdjLambda):
         """
-        Computes the sensitivities for all of the elements in the simulation domain.AdjRHS = np.zeros((self.nodesX*self.nodesY,1), dtype=complex)
+        Computes the sensitivities for all of the elements in the simulation domain.
         @ M: Mass matrix for each element
         @ k: wavevector of the problem (Frequency domain solver).
         @ dAdx: derivative of the design variables in the simulation domain. 
@@ -422,30 +391,19 @@ class dis:
         sens = np.zeros(self.nEly * self.nElx)
         sens_part = np.zeros(self.nEly * self.nElx)
 
-
-        sigma_x = np.array([-1,1,-1,1])
-        sigma_y = np.array([1,1,-1,-1])
-
-        MST_p_yx = np.zeros_like(self.MST_p_y[0,:])
-        MST_p_yy = np.zeros_like(self.MST_p_y[1,:])
-        MST_p_yx = self.MST_p_y[0,:]
-        MST_p_yy = self.MST_p_y[1,:]
-
         for i in range(len(self.edofMat)):
             
-            dSdx_e = - (k**2)* M * dAdx.flatten()[i]
+            dSdx_e = - (k**2)* M * dAdx.flatten()[i] # derivative of the system matrix
 
-            AdjLambda_e = np.array([AdjLambda[n] for n in self.edofMat[i].astype(int)])
-            Ez_e = np.array([Ez[n] for n in self.edofMat[i].astype(int)]).flatten()
+            AdjLambda_e = np.array([AdjLambda[n] for n in self.edofMat[i].astype(int)]) #adjoint per element
+            Ez_e = np.array([Ez[n] for n in self.edofMat[i].astype(int)]).flatten() #field solution per element
 
-            MST_p_yx_e = np.array([MST_p_yx[n] for n in self.edofMat[i].astype(int)])
-            MST_p_yy_e = np.array([MST_p_yy[n] for n in self.edofMat[i].astype(int)])
+            sens [i] = 2*np.real((AdjLambda_e[np.newaxis] @ dSdx_e @ Ez_e) [0]) # sensitivity for metalens
+            sens_part [i] = 2*np.real((AdjLambda_e[np.newaxis] @ dSdx_e @ Ez_e) [0]) # sensitivity for particle 
 
-            dPhi_drho_x = np.dot(MST_p_yx_e, 0.5*sigma_x)*self.scaling
-            dPhi_drho_y = np.dot(MST_p_yy_e, 0.5*sigma_y)*self.scaling
-
-            sens [i] = 2*np.real((AdjLambda_e[np.newaxis] @ dSdx_e @ Ez_e) [0]) 
-            sens_part [i] = 2*np.real((AdjLambda_e[np.newaxis] @ dSdx_e @ Ez_e) [0]) #+ np.real(dPhi_drho_x+dPhi_drho_y)
+            # Note: Sensitivity for metalens and particle is the same, but that might change if the we consider the particle boundaries
+            # as the bounding box for the force calculation, now we are just considering a surrounding box with the size of the 
+            # design domain.
 
         return np.reshape(sens, (self.nEly, self.nElx)), np.reshape(sens_part, (self.nEly, self.nElx))
 
@@ -454,7 +412,7 @@ class dis:
         """
         Computes the numerical value of the FOM.
         """ 
-        self.FOM = (self.Fy)/2.903E-6
+        self.FOM = (self.Fy)/2.903E-6 # normalized by the initial value in the optimization
 
         return self.FOM
 
@@ -501,11 +459,15 @@ class dis:
         self.sens, self.sens_part = self.compute_sensitivities(self.MEM, phy.k, self.dAdx, self.Ez, AdjLambda)
 
         # -----------------------------------------------------------------------------------
-        #  FILTER  SENSITIVITIES 
+        #  FILTER AND THRESHOLD SENSITIVITIES 
         # -----------------------------------------------------------------------------------
+
+        # We need to filter the sensitivities following the chain rule
 
         DdFSTDFS = filThr.deriv_threshold(self.dFPS)
         sensFOM = filThr.density_filter(filThr.filSca, np.ones((self.nEly,self.nElx)),self.sens,DdFSTDFS)
+
+        # We need to threshold the sensitivities following the chain rule
 
         DdFSTDFS_part = filThr.deriv_threshold(self.dFPS_part)
         sensFOM_part = filThr.density_filter(filThr.filSca, np.ones((self.nEly,self.nElx)),self.sens_part,DdFSTDFS_part)
@@ -517,13 +479,6 @@ class dis:
         sensFOM = sensFOM[np.ix_(self.dVElmIdx[0], self.dVElmIdx[1])]
 
         sensFOM_part = sensFOM_part[np.ix_(self.dVElmIdx_part[0], self.dVElmIdx_part[1])]
-
-        #import matplotlib.pyplot as plt
-        #plt.imshow(np.real(sensFOM_part))
-        #print(np.max(sensFOM_part))
-        #print(np.min(sensFOM_part))
-        #plt.show()
-        #raise()
 
         # -----------------------------------------------------------------------------------
         #  FOM FOR MINIMIZATION
@@ -540,5 +495,5 @@ class dis:
         print("----------------------------------------------")
         plot_iteration(self)
         
-        return FOM, sensFOM/2.903E-6, sensFOM_part/2.903E-6
+        return FOM, sensFOM/2.903E-6, sensFOM_part/2.903E-6 # normalized by the initial value in the optimization
         
