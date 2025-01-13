@@ -1,6 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as plt
-from functions import resize_el_node
 
 def calc_MST(Ex,Ey,Ez,Hx,Hy,Hz):
 

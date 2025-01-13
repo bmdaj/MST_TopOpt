@@ -5,7 +5,6 @@ from scipy.sparse import linalg as sla
 from scipy.sparse.linalg import use_solver
 import numpy as np
 import time
-import matplotlib.pyplot as plt
 from filter_threshold import filter_threshold
 
 class dis_heat:
@@ -13,8 +12,7 @@ class dis_heat:
     def __init__(self, 
                  scaling,
                  nElx,
-                 nEly,
-                 debug):
+                 nEly):
         """
         @ scaling: scale of the physical problem; i.e. 1e-9 for nm.
         @ nElX: Number of elements in the X axis.
@@ -32,8 +30,6 @@ class dis_heat:
         LEM, MEM = element_matrices(scaling) 
         self.LEM = LEM
         self.MEM = MEM
-
-        self.debug = debug
 
         use_solver(useUmfpack=True) # reset umfPack usage to default
 
@@ -53,8 +49,6 @@ class dis_heat:
         # A) SET INDEXES FOR THE SYSTEM MATRIX
         # ----------------------------------------------------------------------------------- 
 
-        if self.debug:
-            start = time.time()
 
         nEX = self.nElx # Number of elements in X direction
         nEY = self.nEly # Number of elements in Y direction
@@ -90,12 +84,12 @@ class dis_heat:
         self.nBC = np.concatenate([self.n1BC, self.n2BC, self.n3BC, self.n4BC])
 
         if obj == "lens":
-            self.nBC_const_heat = np.concatenate([self.n4BC])
+            self.nBC_const_heat = np.concatenate([self.n4BC]) # since we want to connect the metalens design to the substrate
 
         if obj =="part":
             center = int(self.nodesX*self.nodesY/2)
-            self.nBC_const_heat = np.array([center])
-            #self.nBC_const_heat = np.concatenate([self.n4BC])
+            self.nBC_const_heat = np.array([center]) # if we want to connect the boundary to the center
+            #self.nBC_const_heat = np.concatenate([self.n4BC]) # if we want to connect the boundary to the bottom
 
         # For the implementation of the BC into the global system matrix we need to know which nodes each boundary line has:
 
@@ -153,48 +147,32 @@ class dis_heat:
         self.iElSens = np.arange(0,4*self.nElx*self.nEly)
         self.jElSens = np.reshape(np.tile(np.arange(0,self.nElx*self.nEly),4),(4, self.nElx*self.nEly)).T.flatten()
 
-        if self.debug:
-            end = time.time()
-            elapsed_time = [(end - start) // 60, end - start - (end - start) // 60 * 60]
-            print("----------------------------------------------")
-            print("Elapsed time in initialization: "+str(int(elapsed_time[0]))+" min "+str(int(round(elapsed_time[1],0)))+" s")
-            print("----------------------------------------------")
-
         
 
     def system_RHS(self, HS_dFPST):
         """
         Sets the system's RHS.
         In this case, we count om having an incident plane wave from the RHS.
-        @ phy:  Physical properties of the system.
-        @ idx_RHS: Indexes of the RHS.
-        @ val_RHS:
-        
+        @ HS_dFPST:  Heat source as defined by the material interpolation (design variable dependent).
         """    
-
-        if self.debug:
-            start = time.time()
 
         F =  np.zeros((self.nodesY*self.nodesX,1), dtype="complex128") # system RHS
         
         HS_dFPST_flat = HS_dFPST.flatten()
         
         for e, nodes in enumerate(self.edofMat):
-            F[nodes.astype(int)] += 0.25*HS_dFPST_flat[e]
+            F[nodes.astype(int)] += 0.25*HS_dFPST_flat[e] # we have 4 nodes, so we get a fourth of the contribution
 
-        F [self.nBC_const_heat] = 0.0
+        # -----------------------------------------------------------------------------------
+        # MODIFY RHS FOR DIRICHLET BOUNDARY CONDITIONS AT CONSTANT TEMPERATURE BOUNDARY
+        # ----------------------------------------------------------------------------------- 
+
+        F [self.nBC_const_heat] = 0.0 # we fix the temperature to zero at the constant temperature boundary
         I = scipy.sparse.identity(n=(len(self.node_nrs_flat)), format ="csr", dtype='complex128')
         values = np.ones_like(self.nBC_const_heat)
         N = I - scipy.sparse.csr_matrix((values,(self.nBC_const_heat.astype(int), self.nBC_const_heat.astype(int))), shape=(len(self.node_nrs_flat),len(self.node_nrs_flat)), dtype='complex128')
         # apply dirichlet 0 boundary conditions with operations
         self.S = N.T @ self.S @ N + I - N 
-
-        if self.debug:
-            end = time.time()
-            elapsed_time = [(end - start) // 60, end - start - (end - start) // 60 * 60]
-            print("----------------------------------------------")
-            print("Elapsed time in RHS: "+str(int(elapsed_time[0]))+" min "+str(int(round(elapsed_time[1],0)))+" s")
-            print("----------------------------------------------")
 
         return F 
     
@@ -203,15 +181,8 @@ class dis_heat:
         Assembles the global system matrix.
         Since all our elements are linear rectangular elements we can use the same element matrices for all of the elements.
         @ L: Laplace matrix for each element
-        @ M: Mass matrix for each element
-        @ K: Boundary matrix for each line in the boundary
         @ k: wavevector of the problem (Frequency domain solver).
-        @ eps: design variables in the simulation domain. 
         """ 
-
-        if self.debug:
-            start = time.time()
-
 
         L_S = np.tile(L.flatten(),self.nElx*self.nEly) # create 1D system Laplace array
         k_S = np.repeat(k, 16)
@@ -221,35 +192,18 @@ class dis_heat:
         # we sum all duplicates, which is equivalent of accumulating the value for each node
         S.sum_duplicates()
         S.eliminate_zeros()
-        
-        if self.debug:
-            end = time.time()
-            elapsed_time = [(end - start) // 60, end - start - (end - start) // 60 * 60]
-            print("----------------------------------------------")
-            print("Elapsed time in assembly: "+str(int(elapsed_time[0]))+" min "+str(int(round(elapsed_time[1],0)))+" s")
-            print("----------------------------------------------")
 
         return S
     
     def solve_sparse_system(self,F):
         """
         Solves a sparse system of equations using LU factorization.
-        @ S: Global System matrix
-        @ F: RHS array 
-        """ 
-
-        if self.debug:
-            start = time.time()
+        @ S: Global System matrix.
+        @ F: RHS array.
+        """
 
         lu = sla.splu(self.S)
         T = lu.solve(F)
-
-        if self.debug:
-            end = time.time()
-            elapsed_time = [(end - start) // 60, end - start - (end - start) // 60 * 60]
-            print("----------------------------------------------")
-            print("Elapsed time in solving system: "+str(int(elapsed_time[0]))+" min "+str(int(round(elapsed_time[1],0)))+" s")
-            print("----------------------------------------------")
 
         return lu, T
 
@@ -257,27 +211,25 @@ class dis_heat:
     def FEM_sol_heat(self, dFP, filThr_con):
         """
         Gives the solution to the forward FEM problem; this is, the electric field solution.
-        @ dVs: Design variables in the simulation domain
-        @ phy: Physics class objects that holds the physical parameters of the system
-        @ filThr: Filtering and thresholding class object
+        @ dFP: Design variables in the simulation domain
+        @ filThr_con: Filtering and thresholding class object for the connectivity (artificial heat) problem.
         """ 
         # -----------------------------------------------------------------------------------
         # FILTERING AND THRESHOLDING ON THE MATERIAL
         # -----------------------------------------------------------------------------------
         # 
 
-        #radius = 4 // 2
-        #y, x = np.ogrid[-radius:radius, -radius:radius]
-        #mask = x**2 + y**2 < radius**2
-        #dFP[self.nEly-3-radius:self.nEly-3+radius, self.nElx-3-radius:self.nElx-3+radius][mask] = 0.7 
-
         self.filThr_con = filThr_con
 
-        beta_CF = 10
-        beta_S = 10
+        # Betas (threshold sharpness) for the conductivity and heat generation thresholding
 
-        eta_CF = 0.7
-        eta_S = 0.7
+        beta_CF = 10 # conductivity
+        beta_S = 10  # heat generation
+
+        # Threshold value for the conductivity and heat generation thresholding
+
+        eta_CF = 0.7 # conductivity
+        eta_S = 0.7  # heat generation
 
         self.filThr_CF =  filter_threshold(self.filThr_con.fR, self.nElx, self.nEly, eta_CF, beta_CF) 
         self.filThr_S =  filter_threshold(self.filThr_con.fR, self.nElx, self.nEly, eta_S, beta_S) 
@@ -290,16 +242,16 @@ class dis_heat:
         # MATERIAL INTERPOLATION
         # ----------------------------------------------------------------------------------- 
 
-        c_mat = 1E10
-        c_bck = 1E-6
+        c_mat = 1E10 # material conductivity
+        c_bck = 1E-6 # background conductivity
 
-        S_mat = 1E20
-        S_bck = 0.0
+        S_mat = 1E20 # material heat generation
+        S_bck = 0.0  # background heat generation
 
-        HCF_dFPST = self.filThr_CF.threshold(self.dFPST)
-        self.A_C, self.dAdx_C = material_interpolation_heat(c_mat, c_bck, self.dFPST)
+        self.A_C, self.dAdx_C = material_interpolation_heat(c_mat, c_bck, self.dFPST) # conductivity interpolation
+
+        self.A_S, self.dAdx_S = material_interpolation_heat(S_mat, S_bck, self.dFPST) # heat generation interpolation
         
-
         # -----------------------------------------------------------------------------------
         # ASSEMBLY OF GLOBAL SYSTEM MATRIX
         # -----------------------------------------------------------------------------------
@@ -310,14 +262,12 @@ class dis_heat:
         # SYSTEM RHS
         # -----------------------------------------------------------------------------------
 
-        HS_dFPST = self.filThr_S.threshold(self.dFPST)
-        self.A_S, self.dAdx_S = material_interpolation_heat(S_mat, S_bck, self.dFPST)
-
         F = self.system_RHS(self.A_S)
 
         # -----------------------------------------------------------------------------------
         # SOLVE SYSTEM OF EQUATIONS
         # -----------------------------------------------------------------------------------
+
         self.lu, self.T = self.solve_sparse_system(F)
 
         return self.T
@@ -338,25 +288,21 @@ class dis_heat:
     def compute_sensitivities(self, L, dAdx, T, AdjLambda):
         """
         Computes the sensitivities for all of the elements in the simulation domain.
-        @ M: Mass matrix for each element
-        @ k: wavevector of the problem (Frequency domain solver).
+        @ L: Laplace matrix for each element
         @ dAdx: derivative of the design variables in the simulation domain. 
-        @ Ez: electric field calculated from the forward problem.
+        @ T: temperaure field calculated from the forward problem.
         @ AdjLambda: Vector obtained by solving S.T * AdjLambda = AdjRHS
-        
         """ 
-        # TO BE CHECKED!!!!
-
-        if self.debug:
-            start = time.time()
 
         sens = np.zeros(self.nEly * self.nElx)
-        sens_RHS = np.zeros(self.nEly * self.nElx)
+        sens_RHS = np.zeros(self.nEly * self.nElx) # this problem also has sensitivities from the RHS, since the heat generation depends on the design!
        
         for i in range(len(self.edofMat)):
 
             dSdx_e = dAdx.flatten()[i] * L
-            dFdx_e =  0.25*self.dAdx_S.flatten()[i]*np.ones(4)
+            dFdx_e =  0.25*self.dAdx_S.flatten()[i]*np.ones(4) # RHS sensitivity per element
+
+            # We also make sure that the Dirichlet (constant heat) boundary conditions are taken into account
 
             for j in range(len(self.edofMat[i].astype(int))):
                 n = self.edofMat[i].astype(int) [j]
@@ -369,17 +315,10 @@ class dis_heat:
             AdjLambda_e = np.array([AdjLambda[n] for n in self.edofMat[i].astype(int)])
             T_e = np.array([T[n] for n in self.edofMat[i].astype(int)]).flatten()
 
-            sens [i] = np.real((AdjLambda_e[np.newaxis] @ ((dSdx_e @ T_e))) [0]) 
-            sens_RHS [i] = np.real((AdjLambda_e[np.newaxis] @ (-dFdx_e)) [0]) 
-
-        if self.debug:
-            end = time.time()
-            elapsed_time = [(end - start) // 60, end - start - (end - start) // 60 * 60]
-            print("----------------------------------------------")
-            print("Elapsed time in computing sensitivities: "+str(int(elapsed_time[0]))+" min "+str(int(round(elapsed_time[1],0)))+" s")
-            print("----------------------------------------------")
+            sens [i] = np.real((AdjLambda_e[np.newaxis] @ ((dSdx_e @ T_e))) [0]) # LHS sensitivities as in the EM problem 
+            sens_RHS [i] = np.real((AdjLambda_e[np.newaxis] @ (-dFdx_e)) [0]) # RHS sensitivities due to the design dependent heat generation
         
-        return np.reshape(sens, (self.nEly, self.nElx)), np.reshape(sens_RHS, (self.nEly, self.nElx))
+        return np.reshape(sens, (self.nEly, self.nElx)), np.reshape(sens_RHS, (self.nEly, self.nElx)) # sensitivities are given separately, since they (may) rely on different filters and thresholds!
 
 
     
@@ -387,21 +326,9 @@ class dis_heat:
         """
         Computes the numerical value of the FOM.
         """ 
-
-        if self.debug:
-            start = time.time()
         
-        FOM = (1/30.0)*np.log10(np.sum(self.T) / (self.nElx*self.nEly*self.scaling**2)) #integral of CF summing over the nodes!
-        #FOM = np.sum(self.T) / (self.nodesX*self.nodesY)
+        FOM = (1/30.0)*np.log10(np.sum(self.T) / (self.nElx*self.nEly*self.scaling**2)) # normalized integral of CF summing over the nodes!
         print("FOM: ", FOM)
-
-        if self.debug:
-            end = time.time()
-            elapsed_time = [(end - start) // 60, end - start - (end - start) // 60 * 60]
-            print("----------------------------------------------")
-            print("Elapsed time in computing FOM: "+str(int(elapsed_time[0]))+" min "+str(int(round(elapsed_time[1],0)))+" s")
-            print("----------------------------------------------")
-
 
         return FOM
 
@@ -416,22 +343,26 @@ class dis_heat:
         """ 
         
         start = time.time() # Measure the time to compute elapsed time when finished
+
         # -----------------------------------------------------------------------------------
         # SOLVE FORWARD PROBLEM
         # -----------------------------------------------------------------------------------
+
         self.T = self.FEM_sol_heat(dVs, filThr_con)
+
         # -----------------------------------------------------------------------------------
         # COMPUTE THE FOM
         # -----------------------------------------------------------------------------------
+
         FOM = self.compute_FOM()
+
         # -----------------------------------------------------------------------------------
         #  ADJOINT OF RHS
         # -----------------------------------------------------------------------------------
-        AdjRHS = np.zeros(self.nodesX*self.nodesY, dtype="complex128")
 
-        AdjRHS = np.real(np.ones_like(self.T)) / (self.nodesX*self.nodesY) 
+        AdjRHS = np.real(np.ones_like(self.T, dtype="complex128")) / (self.nodesX*self.nodesY) 
 
-        AdjRHS = ((1/30.0)/(np.sum(self.T) / (self.nodesX*self.nodesY)*np.log(10))) * AdjRHS
+        AdjRHS = ((1/30.0)/(np.sum(self.T) / (self.nodesX*self.nodesY)*np.log(10))) * AdjRHS # normalization as in the FOM, and derivative of log10
 
         # -----------------------------------------------------------------------------------
         #  SOLVE THE ADJOINT SYSTEM: S.T * AdjLambda = AdjRHS
@@ -443,53 +374,19 @@ class dis_heat:
         # -----------------------------------------------------------------------------------
         #  COMPUTE SENSITIVITIES 
         # -----------------------------------------------------------------------------------
-        self.sens, self.sens_RHS = self.compute_sensitivities(self.LEM, self.dAdx_C, self.T, AdjLambda)
 
+        self.sens, self.sens_RHS = self.compute_sensitivities(self.LEM, self.dAdx_C, self.T, AdjLambda)
         
         # -----------------------------------------------------------------------------------
         #  FILTER  SENSITIVITIES 
         # -----------------------------------------------------------------------------------
-        
-        DdFSTDFS_CF = self.filThr_CF.deriv_threshold(self.dFPST)
-
-        DdFSTDFS_S = self.filThr_S.deriv_threshold(self.dFPST)
 
         DdFSTDFS = self.filThr_con.deriv_threshold(self.dFPS)
 
-        #self.sens = DdFSTDFS_CF * self.sens
-        #self.sens_RHS = DdFSTDFS_S * self.sens_RHS
-
-
         self.sens = self.filThr_con.density_filter(self.filThr_con.filSca, np.ones((self.nEly,self.nElx)),self.sens,DdFSTDFS)
         self.sens_RHS = self.filThr_con.density_filter(self.filThr_con.filSca, np.ones((self.nEly,self.nElx)),self.sens_RHS,DdFSTDFS)
-
-        #def f(x):
-
-        #    dFP = np.reshape(x,(self.nEly, self.nElx))
-        #    dFPS = self.filThr_con.density_filter(np.ones((self.nEly, self.nElx)), self.filThr_con.filSca, dFP, np.ones((self.nEly, self.nElx)))
-        #    dFPST = self.filThr_con.threshold(dFPS)
-
-        #    c_mat = 1E10
-        #    c_bck = 1E-6
-        #    S_mat = 1E20
-        #    S_bck = 0.0
-            #dFPST = np.reshape(x,(self.nEly, self.nElx))
-            #HCF_dFPST = self.filThr_CF.threshold(dFPST)
-        #    self.A_C, self.dAdx_C = material_interpolation_heat(c_mat, c_bck, dFPST)
-        #    self.S = self.assemble_matrix(self.LEM, self.A_C)
-            #HS_dFPST = self.filThr_S.threshold(dFPST)
-        #    self.A_S, self.dAdx_S = material_interpolation_heat(S_mat, S_bck, dFPST)
-        #    F = self.system_RHS(self.A_S)
-        #    self.lu, self.T = self.solve_sparse_system(F)
-        #    FOM = self.compute_FOM()
-
-        #    return FOM
-
-        #step = 1E-5
         
-        #finite_diff(self.dFP.flatten(), f, step, (self.sens+self.sens_RHS).flatten(), self.nElx, self.nEly)
-        
-        sensFOM = self.sens + self.sens_RHS
+        sensFOM = self.sens + self.sens_RHS # now we can finally sum both sensitivites
 
         # -----------------------------------------------------------------------------------
         #  FOM FOR MINIMIZATION

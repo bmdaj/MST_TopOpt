@@ -126,13 +126,11 @@ class freq_top_opt_2D:
 
         self.dis_heat = dis_heat(self.scaling,
                     self.nElx_lens,
-                    self.nEly_lens,
-                    debug=False)
+                    self.nEly_lens)
 
         self.dis_heat_part = dis_heat(self.scaling,
                     self.nElx_part,
-                    self.nEly_part,
-                    debug=False)
+                    self.nEly_part)
 
         # We set the indexes of the discretization for the heat problem: i.e. system matrix, boundary conditions ...
 
