@@ -1,4 +1,4 @@
-# MST_TopOpt
+# `MST_TopOpt`
 
 This repository contains the code used to reproduce key results from the paper:
 
@@ -16,14 +16,14 @@ In this work, we present a general **inverse design framework** based on the **M
 
 This repository includes the code to reproduce the following results from the paper:
 
-1. **Force Calculations for a Particle in Free-Space:** Reproduces the results shown in Figure 3.  
-2. **Optimization for a Particle in Free-Space:** Implements the optimization process for free-space particles in Figure 4.
+1. **Force Calculations for a square article in free-Space:** Reproduces the results shown in Figure 3.  
+2. **Optimization for a particle in free-Space:** Implements the optimization process for free-space particles in Figure 4.
 
 The code provided can be extended to reproduce additional results presented in the paper, such as those for particle-metalens systems and other applications.
 
-## Citing MST_TopOpt
+## Citing `MST_TopOpt`
 
-If you use **MST_topOpt** in your research, we kindly request that you cite the following paper:
+If you use `MST_topOpt` in your research, we kindly request that you cite the following paper:
 
 **B. Martinez de Aguirre Jokisch, R.E. Christiansen, O. Sigmund.**  
 *"Engineering optical forces through Maxwell stress tensor inverse design"*  
