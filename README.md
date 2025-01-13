@@ -17,10 +17,10 @@ The methodology relies on the **finite element method (FEM)** and **topology opt
 
 ### Repository Content
 
-This repository includes the code to reproduce the following results from the paper:
+This repository includes tutorials to reproduce the following results from the paper:
 
-1. **Force Calculations for a square article in free-space:** Reproduces the results shown in Figure 3.  
-2. **Optimization for a particle in free-space:** Implements the optimization process for free-space particles in Figure 4.
+1. **Force Calculations for a square article in free-space:** The tutorial `square.ipynb` reproduces the results shown in Figure 3.  
+2. **Optimization for a particle in free-space:** The tutorial `opt_repulsive.ipynb` implements the optimization process for free-space particles in Figure 4.
 
 The code in this repository can be extended to reproduce additional results presented in the paper, such as those for particle-metalens systems and their applications.
 
