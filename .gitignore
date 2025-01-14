@@ -1,1 +1,4 @@
 __pycache__/
+build/
+dist/
+MST_TopOpt.egg-info/

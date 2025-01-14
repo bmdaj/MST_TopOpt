@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="my_package",                # Package name
+    name="MST_TopOpt",                # Package name
     version="0.1.0",                  # Version
     author="<Beñat Martinez de Aguirre Jokisch",      # Author's name
     author_email="bmdaj13@gmail.com", # Author's email
