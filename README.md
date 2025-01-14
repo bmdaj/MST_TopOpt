@@ -15,6 +15,14 @@ In this work, we present a general **inverse design framework** based on the **M
 
 The methodology relies on the **finite element method (FEM)** and **topology optimization**, a gradient-based approach for iteratively designing optical systems. The examples in this work are **two-dimensional**, assuming **transverse electric (TE) polarization**, with the optical system illuminated by an **incident plane wave**. Note that the base-code can be modified to assume transverse magnetic (TM) polarization or be illuminated by more complex sources.
 
+### Installation
+
+To install the `MST_TopOpt` package, use the following command:
+
+```bash
+pip install MST_TopOpt
+```
+
 ### Repository Content
 
 This repository includes tutorials to reproduce the following results from the paper:
