@@ -8,8 +8,6 @@ def init_plot_params(fontsize):
     Initialization of the plottings style used in different plotting routines.
     @ fontsize: Font size
     """
-    plt.rcParams.update(plt.rcParamsDefault)
-    plt.style.use("science")
     import matplotlib as mpl
     mpl.rcParams.update({"font.size": fontsize})
 
@@ -38,8 +36,8 @@ def plot_E_comp(dis, Ez):
     eps = np.reshape(eps, (dis.nodesY, dis.nodesX))
     ax.contour(np.real(eps), levels=1, cmap='binary', linewidth=2, alpha=1, extent=extent, origin="upper")
 
-    ax.set_xlabel('$x$ (\\textmu m)')
-    ax.set_ylabel('$y$ (\\textmu m)')
+    ax.set_xlabel('$x$ (μm)')
+    ax.set_ylabel('$y$ (μm)')
 
     plt.show()
 
@@ -74,8 +72,8 @@ def plot_H_comp(dis, comp):
     eps = np.reshape(eps, (dis.nodesY, dis.nodesX))
     ax.contour(np.real(eps), levels=1, cmap='binary', linewidth=2, alpha=1, extent=extent, origin="upper")
 
-    ax.set_xlabel('$x$ (\\textmu m)')
-    ax.set_ylabel('$y$ (\\textmu m)')
+    ax.set_xlabel('$x$ (μm)')
+    ax.set_ylabel('$y$ (μm)')
 
     plt.show()
 
@@ -106,8 +104,8 @@ def plot_iteration(dis):
     ax[1].contour(np.real(eps), levels=1, cmap='binary', linewidth=2, alpha=1, extent=extent, origin="upper")
 
     for axis in ax:
-            axis.set_xlabel('$x$ (\\textmu m)')
-    ax[0].set_ylabel('$y$ (\\textmu m)')
+            axis.set_xlabel('$x$ (μm)')
+    ax[0].set_ylabel('$y$ (μm)')
     plt.show()
 
 def save_designs(nElX, nElY, scaling, dis, it_num, directory_opt):

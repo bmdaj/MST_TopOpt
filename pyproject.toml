@@ -1,3 +1,8 @@
 [build-system]
 requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
+[tool.poetry.dependencies]
+python = "^3.8"
+numpy = "^1.21"
+scipy = "^1.7"
+matplotlib = "^3.4"
