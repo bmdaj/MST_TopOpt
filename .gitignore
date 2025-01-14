@@ -3,4 +3,3 @@ build/
 dist/
 MST_TopOpt.egg-info/
 *.yml
-pyproject.toml
